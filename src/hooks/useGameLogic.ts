@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast';
-import { GameEntry } from '@/components/GameHistory';
+import { GameEntry } from '@/types/game';
+import { useAudioManager } from '@/components/AudioManager';
 
 type GamePhase = 'intro' | 'waiting' | 'playing' | 'won' | 'lost';
 
@@ -17,6 +18,7 @@ export const useGameLogic = () => {
   const [gameHistory, setGameHistory] = useState<GameEntry[]>([]);
   const [secretItem, setSecretItem] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const { playSound } = useAudioManager();
   
   const maxQuestions = 20;
 
@@ -106,7 +108,18 @@ export const useGameLogic = () => {
     return randomResponses[Math.floor(Math.random() * randomResponses.length)];
   }, []);
 
-  const handleQuestion = useCallback(async (question: string) => {
+  const isGuess = useCallback((message: string): boolean => {
+    const cleanMessage = message.toLowerCase().trim();
+    // Check if it's a direct item name or a guess-like question
+    return COMMON_ITEMS.some(item => 
+      cleanMessage === item || 
+      cleanMessage.includes(`is it ${item}`) || 
+      cleanMessage.includes(`is it a ${item}`) || 
+      cleanMessage.includes(`is it an ${item}`)
+    ) || (!cleanMessage.includes('?') && COMMON_ITEMS.includes(cleanMessage));
+  }, []);
+
+  const handleMessage = useCallback(async (message: string) => {
     if (gamePhase !== 'playing' || questionsUsed >= maxQuestions) return;
 
     setIsLoading(true);
@@ -114,65 +127,90 @@ export const useGameLogic = () => {
     // Simulate processing time
     await new Promise(resolve => setTimeout(resolve, 800));
     
-    const response = simulateLLMResponse(question, secretItem);
-    const newQuestionCount = questionsUsed + 1;
+    // Check if this is a guess
+    const messageIsGuess = isGuess(message);
     
-    const newEntry: GameEntry = {
-      id: Date.now().toString(),
-      type: 'question',
-      content: question,
-      response: response,
-      questionNumber: newQuestionCount
-    };
-
-    setGameHistory(prev => [...prev, newEntry]);
-    setQuestionsUsed(newQuestionCount);
-    
-    // Check if game should end
-    if (newQuestionCount >= maxQuestions) {
-      setGamePhase('lost');
-      toast({
-        title: "Game Over!",
-        description: `You used all ${maxQuestions} questions. The item was: ${secretItem}`,
-        variant: "destructive"
+    if (messageIsGuess) {
+      // Handle as guess
+      const cleanMessage = message.toLowerCase().trim();
+      let guessedItem = '';
+      
+      // Extract the guessed item
+      COMMON_ITEMS.forEach(item => {
+        if (cleanMessage === item || 
+            cleanMessage.includes(`is it ${item}`) || 
+            cleanMessage.includes(`is it a ${item}`) || 
+            cleanMessage.includes(`is it an ${item}`)) {
+          guessedItem = item;
+        }
       });
+      
+      if (!guessedItem && COMMON_ITEMS.includes(cleanMessage)) {
+        guessedItem = cleanMessage;
+      }
+      
+      const isCorrect = guessedItem === secretItem.toLowerCase();
+      const response = isCorrect 
+        ? `Correct! The item was indeed "${secretItem}". Well done!`
+        : `No, that's not correct. The item was "${secretItem}".`;
+
+      const newEntry: GameEntry = {
+        id: Date.now().toString(),
+        type: 'guess',
+        content: message,
+        response: response,
+        isCorrect
+      };
+
+      setGameHistory(prev => [...prev, newEntry]);
+      setGamePhase(isCorrect ? 'won' : 'lost');
+      
+      // Play sound effect
+      playSound(isCorrect ? 'win' : 'lose');
+      
+      toast({
+        title: isCorrect ? "Congratulations!" : "Game Over!",
+        description: response,
+        variant: isCorrect ? "default" : "destructive"
+      });
+    } else {
+      // Handle as question
+      const response = simulateLLMResponse(message, secretItem);
+      const newQuestionCount = questionsUsed + 1;
+      
+      const newEntry: GameEntry = {
+        id: Date.now().toString(),
+        type: 'question',
+        content: message,
+        response: response,
+        questionNumber: newQuestionCount
+      };
+
+      setGameHistory(prev => [...prev, newEntry]);
+      setQuestionsUsed(newQuestionCount);
+      
+      // Play sound effect for yes/no answers
+      if (response.toLowerCase().includes('yes')) {
+        playSound('yes');
+      } else if (response.toLowerCase().includes('no')) {
+        playSound('no');
+      }
+      
+      // Check if game should end
+      if (newQuestionCount >= maxQuestions) {
+        setGamePhase('lost');
+        playSound('lose');
+        toast({
+          title: "Game Over!",
+          description: `You used all ${maxQuestions} questions. The item was: ${secretItem}`,
+          variant: "destructive"
+        });
+      }
     }
     
     setIsLoading(false);
-  }, [gamePhase, questionsUsed, maxQuestions, simulateLLMResponse, secretItem]);
+  }, [gamePhase, questionsUsed, maxQuestions, simulateLLMResponse, secretItem, isGuess, playSound]);
 
-  const handleGuess = useCallback(async (guess: string) => {
-    if (gamePhase !== 'playing') return;
-
-    setIsLoading(true);
-    
-    // Simulate processing time
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    const isCorrect = guess.toLowerCase().trim() === secretItem.toLowerCase();
-    const response = isCorrect 
-      ? `Correct! The item was indeed "${secretItem}". Well done!`
-      : `No, that's not correct. The item was "${secretItem}".`;
-
-    const newEntry: GameEntry = {
-      id: Date.now().toString(),
-      type: 'guess',
-      content: guess,
-      response: response,
-      isCorrect
-    };
-
-    setGameHistory(prev => [...prev, newEntry]);
-    setGamePhase(isCorrect ? 'won' : 'lost');
-    
-    toast({
-      title: isCorrect ? "Congratulations!" : "Game Over!",
-      description: response,
-      variant: isCorrect ? "default" : "destructive"
-    });
-    
-    setIsLoading(false);
-  }, [gamePhase, secretItem]);
 
   const resetGame = useCallback(() => {
     setGamePhase('intro');
@@ -190,8 +228,7 @@ export const useGameLogic = () => {
     secretItem,
     isLoading,
     startNewGame,
-    handleQuestion,
-    handleGuess,
+    handleMessage,
     resetGame
   };
 };

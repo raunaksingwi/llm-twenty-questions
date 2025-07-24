@@ -1,7 +1,6 @@
 import { GameHeader } from "@/components/GameHeader";
 import { GameIntro } from "@/components/GameIntro";
-import { QuestionInput } from "@/components/QuestionInput";
-import { GameHistory } from "@/components/GameHistory";
+import { ChatInterface } from "@/components/ChatInterface";
 import { GameEndScreen } from "@/components/GameEndScreen";
 import { useGameLogic } from "@/hooks/useGameLogic";
 
@@ -14,8 +13,7 @@ const Index = () => {
     secretItem,
     isLoading,
     startNewGame,
-    handleQuestion,
-    handleGuess,
+    handleMessage,
     resetGame
   } = useGameLogic();
 
@@ -30,42 +28,34 @@ const Index = () => {
           />
         )}
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div className="space-y-6">
-            {gamePhase === 'intro' && (
-              <GameIntro 
-                onStartGame={startNewGame}
-                isLoading={isLoading}
-              />
-            )}
-
-            {(gamePhase === 'playing' || gamePhase === 'waiting') && (
-              <QuestionInput
-                onSubmitQuestion={handleQuestion}
-                onSubmitGuess={handleGuess}
-                disabled={isLoading || gamePhase === 'waiting'}
-                questionsUsed={questionsUsed}
-                maxQuestions={maxQuestions}
-              />
-            )}
-
-            {(gamePhase === 'won' || gamePhase === 'lost') && (
-              <GameEndScreen
-                gamePhase={gamePhase}
-                secretItem={secretItem}
-                questionsUsed={questionsUsed}
-                maxQuestions={maxQuestions}
-                onNewGame={resetGame}
-              />
-            )}
+        {gamePhase === 'intro' ? (
+          <div className="max-w-2xl mx-auto">
+            <GameIntro 
+              onStartGame={startNewGame}
+              isLoading={isLoading}
+            />
           </div>
-
-          {gamePhase !== 'intro' && (
-            <div>
-              <GameHistory entries={gameHistory} />
-            </div>
-          )}
-        </div>
+        ) : (gamePhase === 'won' || gamePhase === 'lost') ? (
+          <div className="max-w-2xl mx-auto">
+            <GameEndScreen
+              gamePhase={gamePhase}
+              secretItem={secretItem}
+              questionsUsed={questionsUsed}
+              maxQuestions={maxQuestions}
+              onNewGame={resetGame}
+            />
+          </div>
+        ) : (
+          <div className="max-w-4xl mx-auto">
+            <ChatInterface
+              entries={gameHistory}
+              onSubmitMessage={handleMessage}
+              disabled={isLoading || gamePhase === 'waiting'}
+              questionsUsed={questionsUsed}
+              maxQuestions={maxQuestions}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
