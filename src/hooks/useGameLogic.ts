@@ -4,7 +4,7 @@ import { GameEntry } from '@/types/game';
 import { useAudioManager } from '@/components/AudioManager';
 import { LLMGameService } from '@/services/llmService';
 
-type GamePhase = 'intro' | 'api-key' | 'waiting' | 'playing' | 'won' | 'lost';
+type GamePhase = 'intro' | 'waiting' | 'playing' | 'won' | 'lost';
 
 export const useGameLogic = () => {
   const [gamePhase, setGamePhase] = useState<GamePhase>('intro');
@@ -12,24 +12,12 @@ export const useGameLogic = () => {
   const [gameHistory, setGameHistory] = useState<GameEntry[]>([]);
   const [secretItem, setSecretItem] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
-  const [llmService, setLlmService] = useState<LLMGameService | null>(null);
+  const [llmService] = useState(() => new LLMGameService());
   const { playSound } = useAudioManager();
   
   const maxQuestions = 20;
 
-  const handleApiKey = useCallback((apiKey: string) => {
-    const service = new LLMGameService(apiKey);
-    setLlmService(service);
-    setGamePhase('intro');
-    localStorage.setItem('claude-api-key', apiKey);
-  }, []);
-
   const startNewGame = useCallback(async () => {
-    if (!llmService) {
-      setGamePhase('api-key');
-      return;
-    }
-
     setIsLoading(true);
     setGamePhase('waiting');
     
@@ -48,26 +36,18 @@ export const useGameLogic = () => {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to start game. Please check your API key.",
+        description: "Failed to start game. Please try again.",
         variant: "destructive"
       });
-      setGamePhase('api-key');
+      setGamePhase('intro');
     } finally {
       setIsLoading(false);
     }
   }, [llmService]);
 
-  // Initialize API key from localStorage on mount
-  useState(() => {
-    const savedApiKey = localStorage.getItem('claude-api-key');
-    if (savedApiKey) {
-      const service = new LLMGameService(savedApiKey);
-      setLlmService(service);
-    }
-  });
 
   const handleMessage = useCallback(async (message: string) => {
-    if (gamePhase !== 'playing' || questionsUsed >= maxQuestions || !llmService) return;
+    if (gamePhase !== 'playing' || questionsUsed >= maxQuestions) return;
 
     setIsLoading(true);
     
@@ -160,7 +140,6 @@ export const useGameLogic = () => {
     isLoading,
     startNewGame,
     handleMessage,
-    resetGame,
-    handleApiKey
+    resetGame
   };
 };

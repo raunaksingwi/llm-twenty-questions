@@ -2,7 +2,6 @@ import { GameHeader } from "@/components/GameHeader";
 import { GameIntro } from "@/components/GameIntro";
 import { ChatInterface } from "@/components/ChatInterface";
 import { GameEndScreen } from "@/components/GameEndScreen";
-import { ApiKeyInput } from "@/components/ApiKeyInput";
 import { useGameLogic } from "@/hooks/useGameLogic";
 
 const Index = () => {
@@ -15,8 +14,7 @@ const Index = () => {
     isLoading,
     startNewGame,
     handleMessage,
-    resetGame,
-    handleApiKey
+    resetGame
   } = useGameLogic();
 
   return (
@@ -30,11 +28,7 @@ const Index = () => {
           />
         )}
 
-        {gamePhase === 'api-key' ? (
-          <div className="max-w-2xl mx-auto">
-            <ApiKeyInput onApiKeySubmit={handleApiKey} />
-          </div>
-        ) : gamePhase === 'intro' ? (
+        {gamePhase === 'intro' ? (
           <div className="max-w-2xl mx-auto">
             <GameIntro 
               onStartGame={startNewGame}

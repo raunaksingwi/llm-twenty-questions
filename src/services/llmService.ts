@@ -9,8 +9,9 @@ export class LLMGameService {
   private apiKey: string;
   private secretItem: string = '';
 
-  constructor(apiKey: string) {
-    this.apiKey = apiKey;
+  constructor() {
+    // Replace with your actual Claude API key
+    this.apiKey = 'YOUR_CLAUDE_API_KEY_HERE';
   }
 
   async selectSecretItem(): Promise<string> {
