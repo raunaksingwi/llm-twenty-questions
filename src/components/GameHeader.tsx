@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 interface GameHeaderProps {
   questionsUsed: number;
   maxQuestions: number;
-  gamePhase: 'waiting' | 'playing' | 'won' | 'lost';
+  gamePhase: 'api-key' | 'waiting' | 'playing' | 'won' | 'lost';
 }
 
 export const GameHeader = ({ questionsUsed, maxQuestions, gamePhase }: GameHeaderProps) => {
