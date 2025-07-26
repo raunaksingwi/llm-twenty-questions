@@ -1,0 +1,21 @@
+# Supabase
+.branches
+.temp
+.config.toml
+.config.toml.backup
+
+# VSCode
+.vscode
+.vscode/**
+
+# Node
+node_modules
+
+# Deno
+.deno
+
+# dotenvx
+.env
+.env.keys
+.env.local
+.env.*.local
