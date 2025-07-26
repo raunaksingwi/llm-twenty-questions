@@ -91,13 +91,16 @@ export const ChatInterface = ({ entries, onSubmitMessage, disabled, questionsUse
   };
 
   return (
-    <Card className="flex flex-col h-[600px] bg-gradient-to-b from-card/50 to-card">
+    <div className="flex flex-col h-full">
       {/* Chat Messages */}
-      <div className="flex-1 p-6 overflow-y-auto space-y-4">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {entries.length === 0 && (
-          <div className="text-center text-muted-foreground py-8">
-            <p className="text-lg mb-2">🎯 Ready to play!</p>
-            <p>Ask yes/no questions or make a guess to find the item.</p>
+          <div className="text-center py-12">
+            <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
+              <span className="text-2xl">🤔</span>
+            </div>
+            <p className="text-slate-600 dark:text-slate-400 text-sm mb-2">I'm ready!</p>
+            <p className="text-slate-500 dark:text-slate-500 text-xs">Ask me yes/no questions or make a guess</p>
           </div>
         )}
         
@@ -105,34 +108,32 @@ export const ChatInterface = ({ entries, onSubmitMessage, disabled, questionsUse
           <div key={entry.id} className="space-y-3">
             {/* User Message */}
             <div className="flex justify-end">
-              <div className="max-w-[80%] bg-primary text-primary-foreground rounded-lg px-4 py-2">
-                <div className="flex items-center gap-2 mb-1">
-                  {entry.type === 'question' ? (
-                    <span className="text-xs opacity-80">Question #{entry.questionNumber}</span>
-                  ) : (
-                    <span className="text-xs opacity-80">Guess</span>
-                  )}
-                </div>
-                <p>{entry.content}</p>
+              <div className="max-w-[85%] bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl rounded-tr-md px-4 py-3 shadow-sm">
+                {entry.questionNumber && (
+                  <div className="text-xs opacity-90 mb-1">
+                    Question #{entry.questionNumber}
+                  </div>
+                )}
+                <p className="text-sm">{entry.content}</p>
               </div>
             </div>
             
             {/* AI Response */}
             <div className="flex justify-start">
-              <div className="max-w-[80%] bg-muted rounded-lg px-4 py-2">
+              <div className="max-w-[85%] bg-slate-100 dark:bg-slate-800 rounded-2xl rounded-tl-md px-4 py-3 shadow-sm">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs text-muted-foreground">Game Host</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">🤖</span>
                   {entry.type === 'guess' && entry.isCorrect !== undefined && (
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                       entry.isCorrect 
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
-                        : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+                        : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                     }`}>
-                      {entry.isCorrect ? '🎉 Correct!' : '❌ Incorrect'}
+                      {entry.isCorrect ? '🎉 Correct!' : '❌ Wrong'}
                     </span>
                   )}
                 </div>
-                <p>{entry.response}</p>
+                <p className="text-sm text-slate-700 dark:text-slate-300">{entry.response}</p>
               </div>
             </div>
           </div>
@@ -140,9 +141,9 @@ export const ChatInterface = ({ entries, onSubmitMessage, disabled, questionsUse
         
         {disabled && (
           <div className="flex justify-start">
-            <div className="bg-muted rounded-lg px-4 py-2 flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span className="text-sm text-muted-foreground">Thinking...</span>
+            <div className="bg-slate-100 dark:bg-slate-800 rounded-2xl rounded-tl-md px-4 py-3 flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-sm text-slate-600 dark:text-slate-400">Thinking...</span>
             </div>
           </div>
         )}
@@ -150,101 +151,116 @@ export const ChatInterface = ({ entries, onSubmitMessage, disabled, questionsUse
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Form */}
-      <div className="border-t p-4">
-        <div className="mb-2 text-sm text-muted-foreground text-center">
-          Questions used: {questionsUsed}/{maxQuestions}
+      {/* Input Area */}
+      <div className="border-t border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm p-4">
+        {/* Question Counter */}
+        <div className="text-center mb-4">
+          <div className="inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-full px-4 py-2">
+            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              {questionsUsed} of {maxQuestions} questions
+            </span>
+          </div>
         </div>
         
         {/* Voice Controls */}
-        <div className="flex justify-center gap-2 mb-3">
-          {speechSupported && (
-            <Button
-              type="button"
-              variant={isListening ? "destructive" : "outline"}
-              size="sm"
-              onClick={handleMicClick}
-              disabled={disabled}
-              className="flex items-center gap-2"
-            >
-              {isListening ? (
-                <>
-                  <MicOff className="h-4 w-4" />
-                  Stop Listening
-                </>
-              ) : (
-                <>
-                  <Mic className="h-4 w-4" />
-                  Voice Input
-                </>
-              )}
-            </Button>
-          )}
-          
-          {ttsSupported && (
-            <Button
-              type="button"
-              variant={voiceEnabled ? "outline" : "secondary"}
-              size="sm"
-              onClick={toggleVoice}
-              className="flex items-center gap-2"
-            >
-              {voiceEnabled ? (
-                <>
-                  <Volume2 className="h-4 w-4" />
-                  Voice On
-                </>
-              ) : (
-                <>
-                  <VolumeX className="h-4 w-4" />
-                  Voice Off
-                </>
-              )}
-            </Button>
-          )}
-        </div>
+        {(speechSupported || ttsSupported) && (
+          <div className="flex justify-center gap-2 mb-4">
+            {speechSupported && (
+              <button
+                type="button"
+                onClick={handleMicClick}
+                disabled={disabled}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  isListening 
+                    ? 'bg-red-500 text-white shadow-lg' 
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                {isListening ? (
+                  <>
+                    <MicOff className="h-4 w-4" />
+                    Stop
+                  </>
+                ) : (
+                  <>
+                    <Mic className="h-4 w-4" />
+                    Voice
+                  </>
+                )}
+              </button>
+            )}
+            
+            {ttsSupported && (
+              <button
+                type="button"
+                onClick={toggleVoice}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  voiceEnabled 
+                    ? 'bg-green-500 text-white shadow-lg' 
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                {voiceEnabled ? (
+                  <>
+                    <Volume2 className="h-4 w-4" />
+                    Sound On
+                  </>
+                ) : (
+                  <>
+                    <VolumeX className="h-4 w-4" />
+                    Sound Off
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        )}
 
-        <form onSubmit={handleSubmit} className="flex gap-2">
-          <Input
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder={isListening ? "Listening... speak now" : "Ask a yes/no question or make a guess..."}
-            disabled={disabled}
-            className={`flex-1 ${isListening ? 'border-red-500 bg-red-50 dark:bg-red-950/20' : ''}`}
-          />
-          <Button 
-            type="submit" 
+        {/* Input Form */}
+        <form onSubmit={handleSubmit} className="flex gap-3">
+          <div className="flex-1 relative">
+            <input
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder={isListening ? "🎤 Listening..." : "Ask a question or make a guess..."}
+              disabled={disabled}
+              className={`w-full px-4 py-3 rounded-2xl border-2 transition-all text-sm ${
+                isListening 
+                  ? 'border-red-300 bg-red-50 dark:bg-red-950/20 dark:border-red-800' 
+                  : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-blue-400 focus:outline-none'
+              } ${disabled ? 'opacity-50' : ''}`}
+            />
+          </div>
+          <button
+            type="submit"
             disabled={disabled || !message.trim()}
-            size="icon"
-            className="shrink-0"
+            className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:transform-none flex items-center justify-center"
           >
-            <Send className="h-4 w-4" />
-          </Button>
+            <Send className="h-5 w-5" />
+          </button>
         </form>
         
-        <div className="mt-2 space-y-1">
-          <p className="text-xs text-muted-foreground text-center">
-            Ask questions like "Is it big?" or make a guess like "Is it a chair?" or just "chair"
-          </p>
-          {(speechSupported || ttsSupported) && (
-            <p className="text-xs text-muted-foreground text-center">
-              {speechSupported && ttsSupported && "🎤 Voice input and 🔊 audio responses available"}
-              {speechSupported && !ttsSupported && "🎤 Voice input available"}
-              {!speechSupported && ttsSupported && "🔊 Audio responses available"}
-            </p>
-          )}
+        {/* Status Messages */}
+        <div className="mt-3 text-center space-y-1">
           {isListening && (
-            <p className="text-xs text-red-600 dark:text-red-400 text-center animate-pulse">
-              🎤 Listening... speak your question or guess
+            <p className="text-xs text-red-600 dark:text-red-400 animate-pulse">
+              🎤 Listening... speak now
             </p>
           )}
           {isSpeaking && (
-            <p className="text-xs text-blue-600 dark:text-blue-400 text-center animate-pulse">
+            <p className="text-xs text-blue-600 dark:text-blue-400 animate-pulse">
               🔊 Speaking...
+            </p>
+          )}
+          {!isListening && !isSpeaking && (
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Try: "Is it bigger than a book?" or "Is it an apple?"
             </p>
           )}
         </div>
       </div>
-    </Card>
+    </div>
   );
 };

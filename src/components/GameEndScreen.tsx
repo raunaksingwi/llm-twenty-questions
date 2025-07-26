@@ -1,6 +1,4 @@
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Trophy, RotateCcw, Target } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 
 interface GameEndScreenProps {
   gamePhase: 'won' | 'lost';
@@ -20,55 +18,92 @@ export const GameEndScreen = ({
   const isWin = gamePhase === 'won';
 
   return (
-    <Card className={`p-8 text-center space-y-6 animate-bounce-in ${
-      isWin 
-        ? 'bg-gradient-to-br from-game-win/20 to-primary/20 border-game-win/30 shadow-win' 
-        : 'bg-gradient-to-br from-destructive/20 to-primary/20 border-destructive/30 shadow-lose'
-    }`}>
+    <div className="w-full max-w-sm mx-auto text-center space-y-6">
+      {/* Result Icon & Message */}
       <div className="space-y-4">
-        {isWin ? (
-          <>
-            <Trophy className="h-16 w-16 mx-auto text-game-win animate-bounce" />
-            <h2 className="text-3xl font-bold text-game-win">
-              Congratulations! 🎉
-            </h2>
-            <p className="text-lg text-foreground">
-              You guessed it in {questionsUsed} question{questionsUsed !== 1 ? 's' : ''}!
-            </p>
-          </>
-        ) : (
-          <>
-            <Target className="h-16 w-16 mx-auto text-destructive" />
-            <h2 className="text-3xl font-bold text-destructive">
-              Game Over! 
-            </h2>
-            <p className="text-lg text-foreground">
-              You used all {maxQuestions} questions.
-            </p>
-          </>
-        )}
+        <div className={`w-24 h-24 mx-auto rounded-full flex items-center justify-center ${
+          isWin 
+            ? 'bg-gradient-to-br from-green-400 to-emerald-500' 
+            : 'bg-gradient-to-br from-orange-400 to-red-500'
+        } shadow-lg`}>
+          <span className="text-4xl">
+            {isWin ? '🎉' : '🤔'}
+          </span>
+        </div>
         
-        {secretItem && (
-          <div className="p-4 bg-muted/30 rounded-lg border border-border/50">
-            <p className="text-sm text-muted-foreground mb-2">
-              The item was:
-            </p>
-            <p className="text-2xl font-bold text-primary">
-              {secretItem}
-            </p>
-          </div>
-        )}
+        <div>
+          <h2 className={`text-2xl font-bold mb-2 ${
+            isWin 
+              ? 'text-green-700 dark:text-green-400' 
+              : 'text-orange-700 dark:text-orange-400'
+          }`}>
+            {isWin ? 'Awesome!' : 'Good Try!'}
+          </h2>
+          <p className="text-slate-600 dark:text-slate-400 text-sm">
+            {isWin 
+              ? `You got it in ${questionsUsed} question${questionsUsed !== 1 ? 's' : ''}!` 
+              : `You used all ${maxQuestions} questions.`
+            }
+          </p>
+        </div>
       </div>
       
-      <Button 
+      {/* Secret Item Reveal */}
+      {secretItem && (
+        <div className={`rounded-2xl p-6 border-2 ${
+          isWin 
+            ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800' 
+            : 'bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800'
+        }`}>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wide">
+            The answer was
+          </p>
+          <div className="text-3xl mb-2">
+            {getItemEmoji(secretItem)}
+          </div>
+          <p className="text-xl font-bold text-slate-800 dark:text-slate-100 capitalize">
+            {secretItem}
+          </p>
+        </div>
+      )}
+      
+      {/* Play Again Button */}
+      <button
         onClick={onNewGame}
-        variant={isWin ? "win" : "game"}
-        size="lg"
-        className="w-full"
+        className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 flex items-center justify-center gap-2"
       >
-        <RotateCcw className="h-5 w-5 mr-2" />
+        <RotateCcw className="h-5 w-5" />
         Play Again
-      </Button>
-    </Card>
+      </button>
+    </div>
   );
 };
+
+// Helper function to get emoji for common items
+function getItemEmoji(item: string): string {
+  const itemLower = item.toLowerCase();
+  const emojiMap: Record<string, string> = {
+    'apple': '🍎',
+    'car': '🚗',
+    'book': '📚',
+    'chair': '🪑',
+    'dog': '🐕',
+    'cat': '🐱',
+    'tree': '🌳',
+    'house': '🏠',
+    'phone': '📱',
+    'computer': '💻',
+    'ball': '⚽',
+    'flower': '🌸',
+    'sun': '☀️',
+    'moon': '🌙',
+    'star': '⭐',
+    'water': '💧',
+    'fire': '🔥',
+    'pizza': '🍕',
+    'banana': '🍌',
+    'bird': '🐦',
+  };
+  
+  return emojiMap[itemLower] || '🤔';
+}

@@ -1,5 +1,3 @@
-import { Card } from "@/components/ui/card";
-
 interface GameHeaderProps {
   questionsUsed: number;
   maxQuestions: number;
@@ -7,49 +5,60 @@ interface GameHeaderProps {
 }
 
 export const GameHeader = ({ questionsUsed, maxQuestions, gamePhase }: GameHeaderProps) => {
-  const getStatusColor = () => {
-    if (gamePhase === 'won') return 'text-game-win';
-    if (gamePhase === 'lost') return 'text-game-lose';
-    if (questionsUsed >= 15) return 'text-destructive';
-    if (questionsUsed >= 10) return 'text-secondary';
-    return 'text-primary';
+  const getStatusEmoji = () => {
+    if (gamePhase === 'won') return '🎉';
+    if (gamePhase === 'lost') return '😔';
+    if (gamePhase === 'waiting') return '⏳';
+    return '🤔';
   };
 
   const getStatusText = () => {
     if (gamePhase === 'won') return 'You Won!';
     if (gamePhase === 'lost') return 'Game Over';
-    if (gamePhase === 'waiting') return 'Ready to Play';
-    return 'Playing...';
+    if (gamePhase === 'waiting') return 'Getting Ready...';
+    return 'Your Turn';
+  };
+
+  const getProgressColor = () => {
+    if (questionsUsed >= 15) return 'bg-red-500';
+    if (questionsUsed >= 10) return 'bg-yellow-500';
+    return 'bg-blue-500';
   };
 
   return (
-    <Card className="p-6 bg-gradient-game border-primary/20 shadow-game animate-slide-in">
-      <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-glow to-accent-glow bg-clip-text text-transparent animate-game-glow">
-          GuessIn20
-        </h1>
-        
-        <div className="flex items-center justify-between">
-          <div className="text-lg font-semibold text-muted-foreground">
-            {getStatusText()}
+    <div className="p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
+            <span className="text-lg">{getStatusEmoji()}</span>
           </div>
-          
-          <div className={`text-2xl font-bold ${getStatusColor()} transition-colors duration-300`}>
+          <div>
+            <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100">
+              20 Questions
+            </h1>
+            <p className="text-xs text-slate-600 dark:text-slate-400">
+              {getStatusText()}
+            </p>
+          </div>
+        </div>
+        
+        <div className="text-right">
+          <div className="text-sm font-semibold text-slate-700 dark:text-slate-300">
             {questionsUsed}/{maxQuestions}
           </div>
-        </div>
-        
-        <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
-          <div 
-            className={`h-full transition-all duration-500 ease-out ${
-              questionsUsed >= 15 ? 'bg-destructive' : 
-              questionsUsed >= 10 ? 'bg-secondary' : 
-              'bg-primary'
-            }`}
-            style={{ width: `${(questionsUsed / maxQuestions) * 100}%` }}
-          />
+          <div className="text-xs text-slate-500 dark:text-slate-400">
+            questions
+          </div>
         </div>
       </div>
-    </Card>
+      
+      {/* Progress Bar */}
+      <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+        <div 
+          className={`h-full transition-all duration-500 ease-out rounded-full ${getProgressColor()}`}
+          style={{ width: `${(questionsUsed / maxQuestions) * 100}%` }}
+        />
+      </div>
+    </div>
   );
 };
