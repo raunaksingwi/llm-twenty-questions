@@ -1,1 +1,4 @@
 project_id = "jzvrquzwwhrpxkvkukgd"
+
+[functions.game-llm]
+verify_jwt = false
