@@ -81,16 +81,28 @@ export const ChatInterface = ({ entries, onSubmitMessage, disabled, questionsUse
     }
   };
 
-  const handleMicMouseDown = () => {
+  const handleMicStart = (e: React.MouseEvent | React.TouchEvent) => {
+    // Prevent any default behavior (like focusing nearby elements)
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (!disabled) {
       stopSpeaking(); // Stop any current speech before listening
       resetTranscript();
       setMessage('');
       startListening();
+      // Blur any focused input to hide mobile keyboard
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
     }
   };
 
-  const handleMicMouseUp = () => {
+  const handleMicEnd = (e: React.MouseEvent | React.TouchEvent) => {
+    // Prevent any default behavior
+    e.preventDefault();
+    e.stopPropagation();
+
     if (isListening) {
       stopListening();
       // Small delay to ensure we get the final transcript
@@ -194,12 +206,13 @@ export const ChatInterface = ({ entries, onSubmitMessage, disabled, questionsUse
             {speechSupported && (
               <button
                 type="button"
-                onMouseDown={handleMicMouseDown}
-                onMouseUp={handleMicMouseUp}
-                onMouseLeave={handleMicMouseUp} // Handle case where mouse leaves button while pressed
-                onTouchStart={handleMicMouseDown}
-                onTouchEnd={handleMicMouseUp}
-                onTouchCancel={handleMicMouseUp}
+                onMouseDown={handleMicStart}
+                onMouseUp={handleMicEnd}
+                onMouseLeave={handleMicEnd}
+                onTouchStart={handleMicStart}
+                onTouchEnd={handleMicEnd}
+                onTouchCancel={handleMicEnd}
+                onContextMenu={(e) => e.preventDefault()} // Prevent long-press menu on mobile
                 disabled={disabled}
                 className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
                   isListening 
