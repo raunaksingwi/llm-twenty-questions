@@ -95,8 +95,12 @@ export const ChatInterface = ({ entries, onSubmitMessage, disabled, questionsUse
       stopListening();
       // Small delay to ensure we get the final transcript
       setTimeout(() => {
-        if (transcript.trim()) {
-          setMessage(transcript.trim());
+        const finalTranscript = transcript.trim();
+        if (finalTranscript && !disabled) {
+          stopSpeaking();
+          onSubmitMessage(finalTranscript);
+          setMessage('');
+          resetTranscript();
         }
       }, 500);
     }
