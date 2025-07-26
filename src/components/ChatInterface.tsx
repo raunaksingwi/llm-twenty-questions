@@ -46,12 +46,15 @@ export const ChatInterface = ({ entries, onSubmitMessage, disabled, questionsUse
     scrollToBottom();
   }, [entries]);
 
-  // Handle speech recognition results
+  // Only update input field with transcript when not using hold-to-talk
+  const [isHoldToTalk, setIsHoldToTalk] = useState(false);
+
+  // Clear message field whenever we're in hold-to-talk mode
   useEffect(() => {
-    if (transcript) {
-      setMessage(transcript);
+    if (isHoldToTalk || isListening) {
+      setMessage('');
     }
-  }, [transcript]);
+  }, [isHoldToTalk, isListening]);
 
   // Auto-speak new AI responses
   useEffect(() => {
@@ -86,15 +89,21 @@ export const ChatInterface = ({ entries, onSubmitMessage, disabled, questionsUse
     e.preventDefault();
     e.stopPropagation();
     
-    if (!disabled) {
+    if (!disabled && !isListening && !isHoldToTalk) {
       stopSpeaking(); // Stop any current speech before listening
       resetTranscript();
-      setMessage('');
-      startListening();
-      // Blur any focused input to hide mobile keyboard
+      setMessage(''); // Clear the input field
+      setIsHoldToTalk(true);
+      
+      // Blur any focused input to hide mobile keyboard and prevent interference
       if (document.activeElement instanceof HTMLElement) {
         document.activeElement.blur();
       }
+      
+      // Force focus away from button to prevent OS interference
+      (e.target as HTMLElement).blur();
+      
+      startListening();
     }
   };
 
@@ -103,18 +112,30 @@ export const ChatInterface = ({ entries, onSubmitMessage, disabled, questionsUse
     e.preventDefault();
     e.stopPropagation();
 
-    if (isListening) {
+    if (isListening || isHoldToTalk) {
+      // Capture the current transcript before stopping
+      const currentTranscript = transcript.trim();
+      
       stopListening();
-      // Small delay to ensure we get the final transcript
+      
+      // Small delay to capture any final speech recognition results
       setTimeout(() => {
-        const finalTranscript = transcript.trim();
+        // Use the latest transcript or the one we captured
+        const finalTranscript = transcript.trim() || currentTranscript;
+        
+        setIsHoldToTalk(false);
+        setMessage(''); // Keep input field clear
+        
         if (finalTranscript && !disabled) {
           stopSpeaking();
           onSubmitMessage(finalTranscript);
-          setMessage('');
-          resetTranscript();
         }
+        resetTranscript();
       }, 500);
+    } else {
+      // Ensure state is clean even if we somehow get here without listening
+      setIsHoldToTalk(false);
+      setMessage('');
     }
   };
 
