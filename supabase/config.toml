@@ -1,4 +1,157 @@
 project_id = "jzvrquzwwhrpxkvkukgd"
 
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://f59f651e-3c4c-4df3-be7b-f1befcdaaf3e.lovableproject.com/**", "https://id-preview--f59f651e-3c4c-4df3-be7b-f1befcdaaf3e.lovable.app/**", "https://llm-twenty-questions.lovable.app/**", "https://preview--llm-twenty-questions.lovable.app/**"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_manual_linking = false
+enable_anonymous_sign_ins = false
+
+[auth.third_party]
+saml_metadata_url = ""
+
+[auth.third_party.apple]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.third_party.azure]
+enabled = false
+client_id = ""
+secret = ""
+issuer = ""
+
+[auth.third_party.bitbucket]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.third_party.discord]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.third_party.facebook]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.third_party.figma]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.third_party.github]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.third_party.gitlab]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.third_party.google]
+enabled = false
+client_id = ""
+secret = ""
+skip_nonce_check = false
+
+[auth.third_party.keycloak]
+enabled = false
+client_id = ""
+secret = ""
+url = ""
+
+[auth.third_party.linkedin_oidc]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.third_party.notion]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.third_party.twitch]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.third_party.twitter]
+enabled = false
+client_id = ""
+client_secret = ""
+
+[auth.third_party.slack_oidc]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.third_party.spotify]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.third_party.workos]
+enabled = false
+client_id = ""
+secret = ""
+url = ""
+
+[auth.third_party.zoom]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.mfa]
+max_enrolled_factors = 10
+[auth.mfa.totp]
+enroll_enabled = false
+verify_enabled = false
+[auth.mfa.phone]
+enroll_enabled = false
+verify_enabled = false
+[auth.mfa.web_authn]
+enroll_enabled = false
+verify_enabled = false
+
+[auth.hook]
+request_timeout = 5
+ui_url = ""
+custom_access_token_hook = ""
+password_verification_attempt_hook = ""
+mfa_verification_attempt_hook = ""
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+secure_password_change = false
+max_frequency = "1s"
+otp_length = 6
+otp_expiry = 3600
+[auth.email.template]
+[auth.sms]
+enable_signup = false
+double_confirm_changes = true
+enable_confirmations = true
+secure_password_change = false
+max_frequency = "1s"
+test_otp = ""
+otp_length = 6
+otp_expiry = 3600
+[auth.sms.template]
+
 [functions.game-llm]
 verify_jwt = false
