@@ -2,8 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { Send, Loader2 } from 'lucide-react';
+import { Send, Loader2, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import { GameEntry } from '@/types/game';
+import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
+import { useTextToSpeech } from '@/hooks/useTextToSpeech';
 
 interface ChatInterfaceProps {
   entries: GameEntry[];
@@ -15,7 +17,25 @@ interface ChatInterfaceProps {
 
 export const ChatInterface = ({ entries, onSubmitMessage, disabled, questionsUsed, maxQuestions }: ChatInterfaceProps) => {
   const [message, setMessage] = useState('');
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Voice hooks
+  const { 
+    isListening, 
+    transcript, 
+    isSupported: speechSupported, 
+    startListening, 
+    stopListening, 
+    resetTranscript 
+  } = useSpeechRecognition();
+  
+  const { 
+    isSpeaking, 
+    isSupported: ttsSupported, 
+    speak, 
+    stop: stopSpeaking 
+  } = useTextToSpeech();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -25,12 +45,49 @@ export const ChatInterface = ({ entries, onSubmitMessage, disabled, questionsUse
     scrollToBottom();
   }, [entries]);
 
+  // Handle speech recognition results
+  useEffect(() => {
+    if (transcript) {
+      setMessage(transcript);
+    }
+  }, [transcript]);
+
+  // Auto-speak new AI responses
+  useEffect(() => {
+    if (voiceEnabled && ttsSupported && entries.length > 0) {
+      const lastEntry = entries[entries.length - 1];
+      if (lastEntry.response) {
+        speak(lastEntry.response);
+      }
+    }
+  }, [entries, voiceEnabled, ttsSupported, speak]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim() && !disabled) {
+      stopSpeaking(); // Stop any current speech
       onSubmitMessage(message.trim());
       setMessage('');
+      resetTranscript();
     }
+  };
+
+  const handleMicClick = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      stopSpeaking(); // Stop any current speech before listening
+      resetTranscript();
+      setMessage('');
+      startListening();
+    }
+  };
+
+  const toggleVoice = () => {
+    if (voiceEnabled) {
+      stopSpeaking();
+    }
+    setVoiceEnabled(!voiceEnabled);
   };
 
   return (
@@ -98,13 +155,62 @@ export const ChatInterface = ({ entries, onSubmitMessage, disabled, questionsUse
         <div className="mb-2 text-sm text-muted-foreground text-center">
           Questions used: {questionsUsed}/{maxQuestions}
         </div>
+        
+        {/* Voice Controls */}
+        <div className="flex justify-center gap-2 mb-3">
+          {speechSupported && (
+            <Button
+              type="button"
+              variant={isListening ? "destructive" : "outline"}
+              size="sm"
+              onClick={handleMicClick}
+              disabled={disabled}
+              className="flex items-center gap-2"
+            >
+              {isListening ? (
+                <>
+                  <MicOff className="h-4 w-4" />
+                  Stop Listening
+                </>
+              ) : (
+                <>
+                  <Mic className="h-4 w-4" />
+                  Voice Input
+                </>
+              )}
+            </Button>
+          )}
+          
+          {ttsSupported && (
+            <Button
+              type="button"
+              variant={voiceEnabled ? "outline" : "secondary"}
+              size="sm"
+              onClick={toggleVoice}
+              className="flex items-center gap-2"
+            >
+              {voiceEnabled ? (
+                <>
+                  <Volume2 className="h-4 w-4" />
+                  Voice On
+                </>
+              ) : (
+                <>
+                  <VolumeX className="h-4 w-4" />
+                  Voice Off
+                </>
+              )}
+            </Button>
+          )}
+        </div>
+
         <form onSubmit={handleSubmit} className="flex gap-2">
           <Input
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Ask a yes/no question or make a guess..."
+            placeholder={isListening ? "Listening... speak now" : "Ask a yes/no question or make a guess..."}
             disabled={disabled}
-            className="flex-1"
+            className={`flex-1 ${isListening ? 'border-red-500 bg-red-50 dark:bg-red-950/20' : ''}`}
           />
           <Button 
             type="submit" 
@@ -115,9 +221,29 @@ export const ChatInterface = ({ entries, onSubmitMessage, disabled, questionsUse
             <Send className="h-4 w-4" />
           </Button>
         </form>
-        <p className="text-xs text-muted-foreground mt-2 text-center">
-          Ask questions like "Is it big?" or make a guess like "Is it a chair?" or just "chair"
-        </p>
+        
+        <div className="mt-2 space-y-1">
+          <p className="text-xs text-muted-foreground text-center">
+            Ask questions like "Is it big?" or make a guess like "Is it a chair?" or just "chair"
+          </p>
+          {(speechSupported || ttsSupported) && (
+            <p className="text-xs text-muted-foreground text-center">
+              {speechSupported && ttsSupported && "🎤 Voice input and 🔊 audio responses available"}
+              {speechSupported && !ttsSupported && "🎤 Voice input available"}
+              {!speechSupported && ttsSupported && "🔊 Audio responses available"}
+            </p>
+          )}
+          {isListening && (
+            <p className="text-xs text-red-600 dark:text-red-400 text-center animate-pulse">
+              🎤 Listening... speak your question or guess
+            </p>
+          )}
+          {isSpeaking && (
+            <p className="text-xs text-blue-600 dark:text-blue-400 text-center animate-pulse">
+              🔊 Speaking...
+            </p>
+          )}
+        </div>
       </div>
     </Card>
   );

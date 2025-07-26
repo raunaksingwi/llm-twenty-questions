@@ -1,6 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Play, Lightbulb } from "lucide-react";
+import { Play, Lightbulb, Mic, Volume2 } from "lucide-react";
+import { useTextToSpeech } from "@/hooks/useTextToSpeech";
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
+import { useEffect } from "react";
 
 interface GameIntroProps {
   onStartGame: () => void;
@@ -8,6 +11,16 @@ interface GameIntroProps {
 }
 
 export const GameIntro = ({ onStartGame, isLoading }: GameIntroProps) => {
+  const { speak, isSupported: ttsSupported } = useTextToSpeech();
+  const { isSupported: speechSupported } = useSpeechRecognition();
+  
+  // Speak welcome message when component mounts
+  useEffect(() => {
+    if (ttsSupported) {
+      const welcomeMessage = "Welcome to Guess in 20! I'm thinking of a common everyday item. You can ask yes or no questions to figure out what it is. You have 20 questions maximum. Ready to start?";
+    }
+  }, [ttsSupported, speak]);
+
   return (
     <Card className="p-8 text-center space-y-6 bg-gradient-game border-primary/20 shadow-game animate-slide-in">
       <div className="space-y-4">
@@ -42,6 +55,7 @@ export const GameIntro = ({ onStartGame, isLoading }: GameIntroProps) => {
               </p>
             </div>
           </div>
+
         </div>
       </div>
       
