@@ -183,9 +183,17 @@ async function evaluateInput(userInput: string, questionCount: number, secretIte
   // Comprehensive but concise system prompt
   const systemPrompt = `Secret item: "${secretItem}"
 You must respond with EXACTLY one word:
-- "win" if the question correctly identifies the item (including synonyms)
-- "yes" or "no" for any other clear question
-- "unsure" if the question is ambiguous/unclear`;
+- "win" ONLY if the user specifically guesses "${secretItem}" or a direct synonym
+- "yes" for true statements that don't guess the exact item
+- "no" for false statements
+- "unsure" if the question is ambiguous or you are not sure about the answer
+
+Examples for "${secretItem}":
+- "is it a ${secretItem}?" → "win"
+- "is it used for writing?" → "yes"
+- "is it found at home?" → "yes"
+- "is it a pen?" → "no"
+- "is it big?" → "unsure"`;
 
   const response = await fetch(CLAUDE_API_CONFIG.baseUrl, {
     method: 'POST',
@@ -219,6 +227,12 @@ You must respond with EXACTLY one word:
 
   // Process the one-word response
   const answer = content.trim().toLowerCase();
+  
+  // Double-check we got a valid response
+  if (!['win', 'yes', 'no', 'unsure'].includes(answer)) {
+    console.error(`Invalid LLM response: "${answer}" for input: "${userInput}"`);
+    throw new Error('Invalid response from LLM');
+  }
   
   if (answer === 'win') {
     result = {
