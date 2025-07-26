@@ -134,45 +134,41 @@ serve(async (req) => {
   }
 });
 
+const items = [
+  'corn', 'container', 'muffin', 'popcorn', 'stamp', 'twig', 'cashew', 'shelf', 'dew', 'toast', 'fridge', 'cooler', 'apple', 'water', 
+  'crib', 'purse', 'pliers', 'truck', 'cabbage', 'jacket', 'plant', 'owl', 'glue', 'shampoo', 'cloud', 'kettle', 'floor', 'chalkboard', 
+  'rainbow', 'bagel', 'strap', 'grill', 'cranberry', 'dolphin', 'letter', 'jelly', 'blanket', 'lake', 'slide', 'toaster', 'arm', 'envelope', 
+  'steak', 'pillow', 'controller', 'stone', 'cereal', 'potato', 'ruler', 'bra', 'sun', 'school', 'mustard', 'axe', 'snail', 'pan', 'swimsuit',
+  'cave', 'mop', 'zipper', 'door', 'tool', 'book', 'sandwich', 'tissue', 'box', 'screw', 'bell', 'fries', 'basket', 'buckle', 'sand', 'juice', 
+  'cup', 'grape', 'towel', 'candle', 'scissors', 'milk', 'boat', 'monkey', 'ticket', 'thermos', 'swing', 'bucket', 'duster', 'cookie', 'filter', 
+  'backpack', 'club', 'desk', 'ear', 'soda', 'skate', 'skin', 'island', 'camera', 'microwave', 'block', 'mirror', 'mouse', 'boots', 'lemon', 
+  'cauliflower', 'whistle', 'gate', 'brush', 'ice', 'vest', 'ocean', 'flagpole', 'nest', 'fountain', 'net', 'soap', 'knife', 'coin', 'jam', 
+  'neck', 'binder', 'soup', 'bottle', 'leg', 'tomato', 'glasses', 'cupcake', 'toe', 'waterfall', 'glove', 'honey', 'bag', 'coat', 'thimble', 
+  'board', 'apron', 'forest', 'fork', 'pouch', 'bat', 'tie', 'toolbox', 'dial', 'flower', 'calendar', 'face', 'flashlight', 'bed', 'loop', 'kite', 
+  'rabbit', 'shell', 'snowflake', 'bush', 'ceiling', 'butter', 'sauce', 'belt', 'storm', 'sheep', 'nail', 'button', 'string', 'coffee', 'lawnmower', 
+  'helmet', 'racquet', 'picture', 'finger', 'chips', 'pig', 'saw', 'spoon', 'pepper', 'lid', 'mask', 'dustpan', 'remote', 'stroller', 'ring', 'necklace', 
+  'toilet', 'park', 'hair', 'chair', 'vacuum', 'rice', 'hotdog', 'whale', 'ladder', 'shoe', 'grapefruit', 'sponge', 'window', 'flour', 'curtain', 'bread', 
+  'mouth', 'pecan', 'freezer', 'date', 'tiger', 'ball', 'tea', 'flag', 'hill', 'pencil', 'almond', 'yogurt', 'folder', 'parsley', 'pizza', 'clipboard', 
+  'shoulder', 'mixer', 'bowl', 'spider', 'mailbox', 'tooth', 'robot', 'feather', 'cake', 'mug', 'crab', 'napkin', 'bee', 'keychain', 'bike', 'orange', 
+  'onion', 'car', 'cat', 'watch', 'closet', 'snap', 'grass', 'strawberry', 'carrot', 'chain', 'moon', 'pinecone', 'oven', 'easel', 'can', 'trashcan', 
+  'berry', 'shirt', 'dress', 'wall', 'cap', 'tray', 'cheese', 'star', 'stapler', 'blender', 'magnet', 'shovel', 'pajamas', 'fish', 'bird', 'yarn', 'rake', 
+  'slipper', 'velcro', 'puddle', 'store', 'river', 'chickpea', 'zebra', 'bear', 'pasta', 'cucumber', 'clay', 'faucet', 'burger', 'celery', 'paper', 'tape', 
+  'globe', 'sticker', 'computer', 'frog', 'relish', 'marker', 'sculpture', 'bookmark', 'hand', 'crate', 'outlet', 'clock', 'worm', 'display', 'drawer', 
+  'plate', 'pickle', 'pistachio', 'rock', 'flowerpot', 'bonnet', 'table', 'hammer', 'horse', 'wallet', 'tongue', 'skateboard', 'robe', 'sock', 'egg', 
+  'mud', 'sink', 'eraser', 'lentil', 'iron', 'oil', 'plane', 'balloon', 'grater', 'peanut', 'cow', 'raindrop', 'ant', 'disk', 'fabric', 'knee', 'eye', 
+  'drill', 'wagon', 'gloves', 'dirt', 'pumpkin', 'snake', 'hat', 'beet', 'seed', 'vase', 'lion', 'salt', 'walnut', 'rug', 'nose', 'eggplant', 'coupon', 
+  'sugar', 'knob', 'poster', 'mountain', 'bean', 'pot', 'tangerine', 'fence', 'house', 'hanger', 'fox', 'adapter', 'receipt', 'hook', 'comb', 'plum', 
+  'keyboard', 'money', 'notebook', 'scarf', 'speaker', 'scooter', 'candy', 'train', 'duck', 'rope', 'key', 'phone', 'leaf', 'sprinkler', 'mushroom', 
+  'dog', 'foot', 'hose', 'toy', 'battery', 'wrench', 'bath', 'switch', 'garlic', 'cable', 'wind', 'bus', 'chicken', 'map', 'bacon', 'sweater', 
+  'banana', 'statue', 'vinegar', 'broccoli', 'crayon', 'donut', 'volcano', 'lettuce', 'head', 'olive', 'cracker', 'sign', 'shark', 'broom', 'plug', 
+  'desert', 'asparagus', 'jar', 'tree', 'kale', 'artichoke', 'doormat', 'thread', 'lamp', 'fig', 'canvas', 'hoodie', 'goggles', 'shorts', 'meat', 
+  'ketchup', 'charger', 'pants'
+];
+
 async function selectSecretItem(): Promise<{ content: string }> {
-  const startTime = performance.now();
-  logPerformance('selectSecretItem:start', startTime);
-  const controller = createRequestController();
-
-  const response = await fetch(CLAUDE_API_CONFIG.baseUrl, {
-    method: 'POST',
-    headers: CLAUDE_API_CONFIG.headers,
-    body: JSON.stringify({
-      model: CLAUDE_API_CONFIG.model,
-      max_tokens: 20,  // Allow a bit more tokens to ensure we get a complete word
-      temperature: 0.7,  // Add some randomness for variety
-      messages: [{
-        role: 'user',
-        content: `You are selecting an item for a game of 20 Questions.
-
-Rules for item selection:
-1. Choose ONE common everyday object
-2. Must be something a kindergartener would know
-3. Must be concrete and physical (no abstract concepts)
-4. Must be a single, specific item (not a category)
-5. Examples: apple, chair, car, dog, book, ball
-
-Respond with ONLY the item name in lowercase, no punctuation or explanation.`
-      }]
-    }),
-    signal: controller.signal
-  });
-  
-  logPerformance('selectSecretItem:apiCall', startTime);
-
-  if (!response.ok) {
-    throw new Error(`Claude API error: ${response.statusText}`);
-  }
-
-  const data = await response.json();
-  const metrics = calculateCost(data);
-  logPerformance('selectSecretItem:complete', startTime, metrics);
-  return { content: data.content[0].text.trim().toLowerCase() };
+  const randomIndex = Math.floor(Math.random() * items.length);
+  const secretItem = items[randomIndex];
+  return { content: secretItem };
 }
 
 async function evaluateInput(userInput: string, questionCount: number, secretItem: string): Promise<any> {
@@ -188,12 +184,12 @@ You must respond with EXACTLY one word:
 - "no" for false statements
 - "unsure" if the question is ambiguous or you are not sure about the answer
 
-Examples for "${secretItem}":
-- "is it a ${secretItem}?" → "win"
+Examples if item were a "pencil":
+- "is it a pencil?" → "win"
 - "is it used for writing?" → "yes"
 - "is it found at home?" → "yes"
 - "is it a pen?" → "no"
-- "is it big?" → "unsure"`;
+- "is it found in the bedroom?" → "unsure"`;
 
   const response = await fetch(CLAUDE_API_CONFIG.baseUrl, {
     method: 'POST',
