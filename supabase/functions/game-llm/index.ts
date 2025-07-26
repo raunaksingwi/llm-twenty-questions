@@ -182,10 +182,10 @@ async function evaluateInput(userInput: string, questionCount: number, secretIte
 
   // Comprehensive but concise system prompt
   const systemPrompt = `Secret item: "${secretItem}"
-You must respond with EXACTLY one of these words: "Yes", "No", or "Unsure"
-
-For guesses: "Yes" if exact match/synonym, "No" if wrong
-For questions: "Yes"/"No" if certain, "Unsure" if ambiguous/unclear`;
+You must respond with EXACTLY one word:
+- "win" if the question correctly identifies the item (including synonyms)
+- "yes" or "no" for any other clear question
+- "unsure" if the question is ambiguous/unclear`;
 
   const response = await fetch(CLAUDE_API_CONFIG.baseUrl, {
     method: 'POST',
@@ -220,30 +220,25 @@ For questions: "Yes"/"No" if certain, "Unsure" if ambiguous/unclear`;
   // Process the one-word response
   const answer = content.trim().toLowerCase();
   
-  // Check if it's a guess by looking for "is it" or similar patterns
-  const isGuess = userInput.toLowerCase().match(/\b(is it|could it be|i think it'?s|my guess is|is the item)\b/);
-  
-  if (isGuess) {
+  if (answer === 'win') {
     result = {
       type: 'guess_evaluation',
-      content: answer === 'yes' ? 'Correct! You got it!' : 'No, that\'s not correct.',
-      isCorrect: answer === 'yes'
+      content: 'Correct! You got it!',
+      isCorrect: true
     };
-    logPerformance('evaluateInput:processGuess', startTime);
+    logPerformance('evaluateInput:processWin', startTime);
+  } else if (answer === 'unsure') {
+    result = {
+      type: 'clarification',
+      content: 'Sorry, I am not sure about that. Could you ask a more specific question?'
+    };
+    logPerformance('evaluateInput:processClarification', startTime);
   } else {
-    if (answer === 'unsure') {
-      result = {
-        type: 'clarification',
-        content: 'Could you be more specific?'
-      };
-      logPerformance('evaluateInput:processClarification', startTime);
-    } else {
-      result = {
-        type: 'answer',
-        content: answer === 'yes' ? 'Yes' : 'No'
-      };
-      logPerformance('evaluateInput:processAnswer', startTime);
-    }
+    result = {
+      type: 'answer',
+      content: answer
+    };
+    logPerformance('evaluateInput:processAnswer', startTime);
   }
 
   logPerformance('evaluateInput:complete', startTime);
