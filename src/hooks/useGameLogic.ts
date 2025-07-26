@@ -54,42 +54,79 @@ export const useGameLogic = () => {
     try {
       const llmResponse = await llmService.evaluateInput(message, questionsUsed);
       
-      if (llmResponse.type === 'guess_evaluation') {
-        // Handle as guess
-        const newEntry: GameEntry = {
-          id: Date.now().toString(),
-          type: 'guess',
-          content: message,
-          response: llmResponse.content,
-          isCorrect: llmResponse.isCorrect
-        };
-
-        setGameHistory(prev => [...prev, newEntry]);
-        setGamePhase(llmResponse.isCorrect ? 'won' : 'lost');
-        
-        // Play sound effect
-        playSound(llmResponse.isCorrect ? 'win' : 'lose');
-        
-        toast({
-          title: llmResponse.isCorrect ? "Congratulations!" : "Game Over!",
-          description: llmResponse.content,
-          variant: llmResponse.isCorrect ? "default" : "destructive"
-        });
-      } else {
-        // Handle as question or clarification
-        const newQuestionCount = llmResponse.type === 'clarification' ? questionsUsed : questionsUsed + 1;
-        
+      if (llmResponse.type === 'clarification') {
+        // Handle clarification - does NOT count as a question
         const newEntry: GameEntry = {
           id: Date.now().toString(),
           type: 'question',
           content: message,
           response: llmResponse.content,
-          questionNumber: llmResponse.type === 'clarification' ? undefined : newQuestionCount
+          questionNumber: undefined // No question number for clarifications
         };
 
         setGameHistory(prev => [...prev, newEntry]);
+        // Don't increment questionsUsed for clarifications
         
-        if (llmResponse.type !== 'clarification') {
+        toast({
+          title: "Need clarification",
+          description: llmResponse.content,
+          variant: "default"
+        });
+      } else {
+        // All other inputs count as questions
+        const newQuestionCount = questionsUsed + 1;
+        
+        if (llmResponse.type === 'guess_evaluation') {
+          // Handle as guess - but still counts as a question
+          const newEntry: GameEntry = {
+            id: Date.now().toString(),
+            type: 'guess',
+            content: message,
+            response: llmResponse.content,
+            isCorrect: llmResponse.isCorrect,
+            questionNumber: newQuestionCount
+          };
+
+          setGameHistory(prev => [...prev, newEntry]);
+          setQuestionsUsed(newQuestionCount);
+          
+          if (llmResponse.isCorrect) {
+            // Player won with correct guess
+            setGamePhase('won');
+            playSound('win');
+            toast({
+              title: "Congratulations!",
+              description: llmResponse.content,
+            });
+          } else {
+            // Incorrect guess, but game continues if questions remain
+            if (newQuestionCount >= maxQuestions) {
+              setGamePhase('lost');
+              playSound('lose');
+              toast({
+                title: "Game Over!",
+                description: `You used all ${maxQuestions} questions. The item was: ${llmService.getSecretItem()}`,
+                variant: "destructive"
+              });
+            } else {
+              // Game continues
+              toast({
+                title: "Keep trying!",
+                description: `${llmResponse.content} You have ${maxQuestions - newQuestionCount} questions left.`,
+              });
+            }
+          }
+        } else {
+          // Handle as regular question
+          const newEntry: GameEntry = {
+            id: Date.now().toString(),
+            type: 'question',
+            content: message,
+            response: llmResponse.content,
+            questionNumber: newQuestionCount
+          };
+
+          setGameHistory(prev => [...prev, newEntry]);
           setQuestionsUsed(newQuestionCount);
           
           // Play sound effect for yes/no answers
@@ -99,7 +136,7 @@ export const useGameLogic = () => {
             playSound('no');
           }
           
-          // Check if game should end
+          // Check if game should end due to question limit
           if (newQuestionCount >= maxQuestions) {
             setGamePhase('lost');
             playSound('lose');

@@ -76,29 +76,42 @@ async function evaluateInput(apiKey: string, userInput: string, questionCount: n
   const systemPrompt = `You are the host of "20 Questions" game. The secret item is: ${secretItem}
 
 CRITICAL RULES:
-1. For YES/NO QUESTIONS: Answer with EXACTLY "Yes" or "No" only
-2. For GUESSES: If they guess the correct item or a synonym, respond with exactly: {"type": "guess_evaluation", "content": "Correct! The item was [item]. Well done!", "isCorrect": true}
-3. For WRONG GUESSES: Respond with exactly: {"type": "guess_evaluation", "content": "No, that's not correct.", "isCorrect": false}
-4. For INVALID INPUT: Ask for a yes/no question
+1. Determine if the user input is a GUESS or a QUESTION
+2. For GUESSES: 
+   - If correct (including synonyms), respond: {"type": "guess_evaluation", "content": "Correct! The item was [item]. Well done!", "isCorrect": true}
+   - If incorrect, respond: {"type": "guess_evaluation", "content": "No, that's not correct.", "isCorrect": false}
+3. For QUESTIONS: 
+   - If you can answer with certainty, respond with EXACTLY "Yes" or "No" only
+   - If you cannot answer yes/no with certainty, respond: {"type": "clarification", "content": "I'm not sure about that. Could you ask a more specific question?"}
 
 GUESS DETECTION: User is making a guess if they:
-- Say an object name without "?" (like "apple", "chair")
+- Say an object name directly (like "apple", "chair")
 - Say "is it X?" or "it's X" 
 - Use phrases like "I think it's", "my guess is"
+- Seem to be naming a specific item rather than asking about properties
+
+QUESTION DETECTION: User is asking a question if they:
+- Ask about properties: "Is it big?", "Can you eat it?", "Is it made of metal?"
+- Ask about categories: "Is it an animal?", "Is it found in a house?"
+- Ask yes/no questions about characteristics
+
+UNCERTAIN RESPONSES: Use clarification when:
+- Question is too vague or ambiguous
+- Question asks about subjective properties that don't have clear yes/no answers
+- Question is about complex comparisons that depend on context
+- You genuinely cannot determine a clear yes/no answer
 
 SYNONYM HANDLING: Accept reasonable synonyms and variations:
-- "car" = "automobile", "vehicle"
-- "dog" = "puppy", "canine" 
-- "apple" = "fruit" (if apple is the answer)
-- Consider common alternative names
+- "car" = "automobile", "vehicle", "auto"
+- "dog" = "puppy", "canine", "hound"
+- Consider common alternative names and related terms
 
-QUESTION EXAMPLES that get Yes/No:
-- "Is it big?"
-- "Can you eat it?"
-- "Is it made of metal?"
-- "Do you find it in a house?"
+IMPORTANT: 
+- Guesses and clear yes/no questions count toward the 20-question limit
+- Clarification responses do NOT count toward the question limit
+- Game ends when: player guesses correctly (win) OR uses all 20 questions (lose)
 
-Respond in JSON format for guesses, plain "Yes"/"No" for questions.`;
+Respond in JSON format for guesses and clarifications, plain "Yes"/"No" for clear questions.`;
 
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
