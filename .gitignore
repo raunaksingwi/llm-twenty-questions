@@ -24,10 +24,10 @@ dist-ssr
 *.sw?
 
 # Supabase
-.branches
-.temp
-.config.toml
-.config.toml.backup
+supabase/.branches
+supabase/.temp
+supabase/.config.toml
+supabase/.config.toml.backup
 
 # VSCode
 .vscode
