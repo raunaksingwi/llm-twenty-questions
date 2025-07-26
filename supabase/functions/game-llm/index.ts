@@ -1,16 +1,92 @@
+// @deno-types="https://deno.land/x/xhr@0.1.0/mod.ts"
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+// Declare Deno namespace for TypeScript
+declare const Deno: {
+  env: {
+    get(key: string): string | undefined;
+  };
+};
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Common API configuration
+const CLAUDE_API_CONFIG = {
+  model: 'claude-3-haiku-20240307',  // Using Haiku - cheaper but still accurate for simple tasks
+  baseUrl: 'https://api.anthropic.com/v1/messages',
+  headers: {
+    'Content-Type': 'application/json',
+    'anthropic-version': '2023-06-01'
+  }
+};
+
+// Performance and cost logging
+interface CostMetrics {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  cost: number;
+}
+
+const COST_PER_1K_TOKENS = {
+  input: 0.00025,   // $0.25/1K tokens for Haiku input
+  output: 0.00125,  // $1.25/1K tokens for Haiku output
+};
+
+const logPerformance = (action: string, startTime: number, metrics?: CostMetrics) => {
+  const duration = Math.round(performance.now() - startTime);
+  let message = `[Performance] ${action}: ${duration}ms`;
+  
+  if (metrics) {
+    const cost = metrics.cost.toFixed(4);
+    message += `\n[Tokens] Prompt: ${metrics.promptTokens}, Completion: ${metrics.completionTokens}, Total: ${metrics.totalTokens}`;
+    message += `\n[Cost] $${cost}`;
+  }
+  
+  console.log(message);
+  return duration;
+};
+
+const calculateCost = (data: any): CostMetrics => {
+  const promptTokens = data.usage?.input_tokens || 0;
+  const completionTokens = data.usage?.output_tokens || 0;
+  const totalTokens = promptTokens + completionTokens;
+  
+  const cost = 
+    (promptTokens / 1000) * COST_PER_1K_TOKENS.input +
+    (completionTokens / 1000) * COST_PER_1K_TOKENS.output;
+    
+  return {
+    promptTokens,
+    completionTokens,
+    totalTokens,
+    cost
+  };
+};
+
+// Request timeout configuration
+const TIMEOUT_MS = 5000; // 5 seconds max
+
+// Create a new controller for each request
+const createRequestController = () => {
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), TIMEOUT_MS);
+  return controller;
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  // Create abort controller for timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
     const { action, userInput, questionCount, secretItem } = await req.json();
@@ -20,134 +96,156 @@ serve(async (req) => {
       throw new Error('Claude API key not configured');
     }
 
+    // Add API key to config
+    CLAUDE_API_CONFIG.headers['X-API-Key'] = claudeApiKey;
+
+    const startTime = performance.now();
     let response;
 
-    if (action === 'select_secret_item') {
-      response = await selectSecretItem(claudeApiKey);
-    } else if (action === 'evaluate_input') {
-      response = await evaluateInput(claudeApiKey, userInput, questionCount, secretItem);
-    } else {
-      throw new Error('Invalid action');
-    }
+    try {
+      if (action === 'select_secret_item') {
+        response = await selectSecretItem();
+      } else if (action === 'evaluate_input') {
+        response = await evaluateInput(userInput, questionCount, secretItem);
+      } else {
+        throw new Error('Invalid action');
+      }
 
-    return new Response(JSON.stringify(response), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+      const endTime = performance.now();
+      console.log(`Request completed in ${Math.round(endTime - startTime)}ms`);
+
+      return new Response(JSON.stringify(response), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        throw new Error('Request timed out after ' + TIMEOUT_MS + 'ms');
+      }
+      throw error;
+    }
   } catch (error) {
     console.error('Error in game-llm function:', error);
     return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
+      status: error.name === 'AbortError' ? 408 : 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
+  } finally {
+    clearTimeout(timeoutId);
   }
 });
 
-async function selectSecretItem(apiKey: string): Promise<{ content: string }> {
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+async function selectSecretItem(): Promise<{ content: string }> {
+  const startTime = performance.now();
+  logPerformance('selectSecretItem:start', startTime);
+  const controller = createRequestController();
+
+  const response = await fetch(CLAUDE_API_CONFIG.baseUrl, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-API-Key': apiKey,
-      'anthropic-version': '2023-06-01'
-    },
+    headers: CLAUDE_API_CONFIG.headers,
     body: JSON.stringify({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 50,
+      model: CLAUDE_API_CONFIG.model,
+      max_tokens: 20,  // Allow a bit more tokens to ensure we get a complete word
+      temperature: 0.7,  // Add some randomness for variety
       messages: [{
         role: 'user',
-        content: `You are the game host for "20 Questions". Select ONE common, everyday item that a kindergartener would know from picture books (like: apple, chair, car, dog, book, ball, etc.).
+        content: `You are selecting an item for a game of 20 Questions.
 
-CRITICAL: Respond with ONLY the item name in lowercase, nothing else. No punctuation, no explanations.
+Rules for item selection:
+1. Choose ONE common everyday object
+2. Must be something a kindergartener would know
+3. Must be concrete and physical (no abstract concepts)
+4. Must be a single, specific item (not a category)
+5. Examples: apple, chair, car, dog, book, ball
 
-Choose something concrete and physical that exists in the real world.`
+Respond with ONLY the item name in lowercase, no punctuation or explanation.`
       }]
-    })
+    }),
+    signal: controller.signal
   });
+  
+  logPerformance('selectSecretItem:apiCall', startTime);
 
   if (!response.ok) {
     throw new Error(`Claude API error: ${response.statusText}`);
   }
 
   const data = await response.json();
+  const metrics = calculateCost(data);
+  logPerformance('selectSecretItem:complete', startTime, metrics);
   return { content: data.content[0].text.trim().toLowerCase() };
 }
 
-async function evaluateInput(apiKey: string, userInput: string, questionCount: number, secretItem: string): Promise<any> {
-  const systemPrompt = `You are the host of "20 Questions" game. The secret item is: ${secretItem}
+async function evaluateInput(userInput: string, questionCount: number, secretItem: string): Promise<any> {
+  const startTime = performance.now();
+  logPerformance('evaluateInput:start', startTime);
+  const controller = createRequestController();
 
-CRITICAL RULES:
-1. Determine if the user input is a GUESS or a QUESTION
-2. For GUESSES: 
-   - If correct (including synonyms), respond: {"type": "guess_evaluation", "content": "Correct! The item was [item]. Well done!", "isCorrect": true}
-   - If incorrect, respond: {"type": "guess_evaluation", "content": "No, that's not correct.", "isCorrect": false}
-3. For QUESTIONS: 
-   - If you can answer with certainty, respond with EXACTLY "Yes" or "No" only
-   - If you cannot answer yes/no with certainty, respond: {"type": "clarification", "content": "I'm not sure about that. Could you ask a more specific question?"}
+  // Comprehensive but concise system prompt
+  const systemPrompt = `Secret item: "${secretItem}"
+You must respond with EXACTLY one of these words: "Yes", "No", or "Unsure"
 
-GUESS DETECTION: User is making a guess if they:
-- Say an object name directly (like "apple", "chair")
-- Say "is it X?" or "it's X" 
-- Use phrases like "I think it's", "my guess is"
-- Seem to be naming a specific item rather than asking about properties
+For guesses: "Yes" if exact match/synonym, "No" if wrong
+For questions: "Yes"/"No" if certain, "Unsure" if ambiguous/unclear`;
 
-QUESTION DETECTION: User is asking a question if they:
-- Ask about properties: "Is it big?", "Can you eat it?", "Is it made of metal?"
-- Ask about categories: "Is it an animal?", "Is it found in a house?"
-- Ask yes/no questions about characteristics
-
-UNCERTAIN RESPONSES: Use clarification when:
-- Question is too vague or ambiguous
-- Question asks about subjective properties that don't have clear yes/no answers
-- Question is about complex comparisons that depend on context
-- You genuinely cannot determine a clear yes/no answer
-
-SYNONYM HANDLING: Accept reasonable synonyms and variations:
-- "car" = "automobile", "vehicle", "auto"
-- "dog" = "puppy", "canine", "hound"
-- Consider common alternative names and related terms
-
-IMPORTANT: 
-- Guesses and clear yes/no questions count toward the 20-question limit
-- Clarification responses do NOT count toward the question limit
-- Game ends when: player guesses correctly (win) OR uses all 20 questions (lose)
-
-Respond in JSON format for guesses and clarifications, plain "Yes"/"No" for clear questions.`;
-
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+  const response = await fetch(CLAUDE_API_CONFIG.baseUrl, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-API-Key': apiKey,
-      'anthropic-version': '2023-06-01'
-    },
+    headers: CLAUDE_API_CONFIG.headers,
     body: JSON.stringify({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 150,
+      model: CLAUDE_API_CONFIG.model,
+      max_tokens: 100,  // Allow more tokens for accurate responses
+      temperature: 0,   // Keep deterministic for consistency
       messages: [{
         role: 'user',
-        content: `${systemPrompt}
-
-Question #${questionCount + 1}: "${userInput}"`
+        content: `${systemPrompt}\n\nQ${questionCount + 1}: "${userInput}"`
       }]
-    })
+    }),
+    signal: controller.signal
   });
+  
+  logPerformance('evaluateInput:apiCall', startTime);
 
   if (!response.ok) {
-    throw new Error(`Claude API error: ${response.statusText}`);
+    const error = `Claude API error: ${response.statusText}`;
+    logPerformance('evaluateInput:error', startTime);
+    throw new Error(error);
   }
 
   const data = await response.json();
+  const metrics = calculateCost(data);
+  logPerformance('evaluateInput:parseResponse', startTime, metrics);
+  
   const content = data.content[0].text.trim();
+  let result;
 
-  // Try to parse as JSON first (for guesses)
-  try {
-    return JSON.parse(content);
-  } catch {
-    // If not JSON, treat as yes/no answer
-    const isYes = content.toLowerCase().includes('yes');
-    return {
-      type: 'answer',
-      content: isYes ? 'Yes' : 'No'
+  // Process the one-word response
+  const answer = content.trim().toLowerCase();
+  
+  // Check if it's a guess by looking for "is it" or similar patterns
+  const isGuess = userInput.toLowerCase().match(/\b(is it|could it be|i think it'?s|my guess is|is the item)\b/);
+  
+  if (isGuess) {
+    result = {
+      type: 'guess_evaluation',
+      content: answer === 'yes' ? 'Correct! You got it!' : 'No, that\'s not correct.',
+      isCorrect: answer === 'yes'
     };
+    logPerformance('evaluateInput:processGuess', startTime);
+  } else {
+    if (answer === 'unsure') {
+      result = {
+        type: 'clarification',
+        content: 'Could you be more specific?'
+      };
+      logPerformance('evaluateInput:processClarification', startTime);
+    } else {
+      result = {
+        type: 'answer',
+        content: answer === 'yes' ? 'Yes' : 'No'
+      };
+      logPerformance('evaluateInput:processAnswer', startTime);
+    }
   }
+
+  logPerformance('evaluateInput:complete', startTime);
+  return result;
 }
