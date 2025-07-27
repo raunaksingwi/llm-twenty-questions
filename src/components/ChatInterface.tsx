@@ -142,18 +142,15 @@ export const ChatInterface = ({
     e.stopPropagation();
 
     if (isListening || isHoldToTalk) {
-      // Capture the current transcript before stopping
-      const currentTranscript = transcript.trim();
-      
-      // Use delayed stop to capture final words
-      stopListeningDelayed(800); // 800ms delay to capture final words
       setIsHoldToTalk(false);
       setIsCapturingFinal(true);
       
-      // Wait a bit longer to capture any final speech recognition results
+      // Use delayed stop to capture the last word after button release
+      stopListeningDelayed(500);
+      
+      // Wait for the delayed stop plus additional time for final processing
       setTimeout(() => {
-        // Use the latest transcript or the one we captured
-        const finalTranscript = transcript.trim() || currentTranscript;
+        const finalTranscript = transcript.trim();
         
         setMessage(''); // Keep input field clear
         setIsCapturingFinal(false);
@@ -163,9 +160,9 @@ export const ChatInterface = ({
           onSubmitMessage(finalTranscript);
         }
         resetTranscript();
-      }, 1000); // Increased delay to match the delayed stop
+      }, 800); // 500ms for delayed stop + 300ms for processing
     } else {
-      // Ensure state is clean even if we somehow get here without listening
+      // Ensure state is clean
       setIsHoldToTalk(false);
       setMessage('');
     }
@@ -174,15 +171,14 @@ export const ChatInterface = ({
   const handleMicBlur = () => {
     // Handle focus loss - stop listening if we were in hold-to-talk mode
     if (isListening || isHoldToTalk) {
-      const currentTranscript = transcript.trim();
-      
-      // Use delayed stop to capture final words
-      stopListeningDelayed(800);
       setIsHoldToTalk(false);
       setIsCapturingFinal(true);
       
+      // Use delayed stop to capture any final words
+      stopListeningDelayed(500);
+      
       setTimeout(() => {
-        const finalTranscript = transcript.trim() || currentTranscript;
+        const finalTranscript = transcript.trim();
         
         setMessage('');
         setIsCapturingFinal(false);
@@ -192,7 +188,7 @@ export const ChatInterface = ({
           onSubmitMessage(finalTranscript);
         }
         resetTranscript();
-      }, 1000);
+      }, 800);
     }
   };
 

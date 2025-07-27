@@ -75,27 +75,20 @@ export const useSpeechRecognition = () => {
         };
 
         recognitionInstance.onresult = (event: SpeechRecognitionEvent) => {
-          let finalTranscript = '';
-          let interimTranscript = '';
+          let fullTranscript = '';
           
-          // Process all results
-          for (let i = event.resultIndex; i < event.results.length; i++) {
+          // Collect all results from the beginning
+          for (let i = 0; i < event.results.length; i++) {
             const result = event.results[i];
-            const transcript = result[0].transcript;
+            fullTranscript += result[0].transcript;
             
-            if (result.isFinal) {
-              finalTranscript += transcript + ' ';
-            } else {
-              // Only use interim results with high confidence
-              if (result[0].confidence > 0.7) {
-                interimTranscript += transcript;
-              }
+            // Add space between final results
+            if (result.isFinal && i < event.results.length - 1) {
+              fullTranscript += ' ';
             }
           }
           
-          // Update transcript with both final and interim results
-          const combinedTranscript = (finalTranscript + interimTranscript).trim();
-          setTranscript(combinedTranscript);
+          setTranscript(fullTranscript.trim());
         };
 
         recognitionInstance.onend = () => {
