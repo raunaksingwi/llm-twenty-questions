@@ -27,7 +27,7 @@ export const GameEndScreen = ({
             : 'bg-gradient-to-br from-orange-400 to-red-500'
         } shadow-lg`}>
           <span className="text-4xl">
-            {isWin ? '🎉' : '🤔'}
+            {isWin ? '🏆' : '🤔'}
           </span>
         </div>
         

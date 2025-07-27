@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import { toast } from '@/hooks/use-toast';
 import { GameEntry } from '@/types/game';
 import { useAudioManager } from '@/components/AudioManager';
 import { LLMGameService } from '@/services/llmService';
@@ -28,17 +27,8 @@ export const useGameLogic = () => {
       setQuestionsUsed(0);
       setGameHistory([]);
       setGamePhase('playing');
-      
-      toast({
-        title: "Game Started!",
-        description: "I've thought of an item. Start asking yes/no questions!",
-      });
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to start game. Please try again.",
-        variant: "destructive"
-      });
+      console.error("Failed to start game:", error);
       setGamePhase('intro');
     } finally {
       setIsLoading(false);
@@ -66,12 +56,6 @@ export const useGameLogic = () => {
 
         setGameHistory(prev => [...prev, newEntry]);
         // Don't increment questionsUsed for clarifications
-        
-        toast({
-          title: "Need clarification",
-          description: llmResponse.content,
-          variant: "default"
-        });
       } else {
         // All other inputs count as questions
         const newQuestionCount = questionsUsed + 1;
@@ -94,26 +78,11 @@ export const useGameLogic = () => {
             // Player won with correct guess
             setGamePhase('won');
             playSound('win');
-            toast({
-              title: "Congratulations!",
-              description: llmResponse.content,
-            });
           } else {
             // Incorrect guess, but game continues if questions remain
             if (newQuestionCount >= maxQuestions) {
               setGamePhase('lost');
               playSound('lose');
-              toast({
-                title: "Game Over!",
-                description: `You used all ${maxQuestions} questions. The item was: ${llmService.getSecretItem()}`,
-                variant: "destructive"
-              });
-            } else {
-              // Game continues
-              toast({
-                title: "Keep trying!",
-                description: `${llmResponse.content} You have ${maxQuestions - newQuestionCount} questions left.`,
-              });
             }
           }
         } else {
@@ -140,20 +109,11 @@ export const useGameLogic = () => {
           if (newQuestionCount >= maxQuestions) {
             setGamePhase('lost');
             playSound('lose');
-            toast({
-              title: "Game Over!",
-              description: `You used all ${maxQuestions} questions. The item was: ${llmService.getSecretItem()}`,
-              variant: "destructive"
-            });
           }
         }
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to get response. Please try again.",
-        variant: "destructive"
-      });
+      console.error("Failed to get response:", error);
     } finally {
       setIsLoading(false);
     }
@@ -168,6 +128,25 @@ export const useGameLogic = () => {
     setIsLoading(false);
   }, []);
 
+  const giveUp = useCallback(() => {
+    if (gamePhase === 'playing') {
+      setGamePhase('lost');
+      playSound('lose');
+      
+      // Add a system message showing the answer
+      const giveUpEntry: GameEntry = {
+        id: Date.now().toString(),
+        type: 'question',
+        content: "I give up. What was the answer?",
+        response: `The answer was "${secretItem}". Better luck next time!`,
+        questionNumber: questionsUsed + 1
+      };
+      
+      setGameHistory(prev => [...prev, giveUpEntry]);
+      setQuestionsUsed(prev => prev + 1);
+    }
+  }, [gamePhase, secretItem, questionsUsed, playSound]);
+
   return {
     gamePhase,
     questionsUsed,
@@ -177,6 +156,7 @@ export const useGameLogic = () => {
     isLoading,
     startNewGame,
     handleMessage,
-    resetGame
+    resetGame,
+    giveUp
   };
 };

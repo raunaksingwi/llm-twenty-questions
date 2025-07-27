@@ -1,10 +1,15 @@
+import { useState } from "react";
 import { GameHeader } from "@/components/GameHeader";
 import { GameIntro } from "@/components/GameIntro";
 import { ChatInterface } from "@/components/ChatInterface";
 import { GameEndScreen } from "@/components/GameEndScreen";
 import { useGameLogic } from "@/hooks/useGameLogic";
+import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 
 const Index = () => {
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const { isSupported: ttsSupported } = useTextToSpeech();
+  
   const {
     gamePhase,
     questionsUsed,
@@ -14,8 +19,13 @@ const Index = () => {
     isLoading,
     startNewGame,
     handleMessage,
-    resetGame
+    resetGame,
+    giveUp
   } = useGameLogic();
+
+  const handleVoiceToggle = () => {
+    setVoiceEnabled(!voiceEnabled);
+  };
 
   return (
     <div className="h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 overflow-hidden">
@@ -28,6 +38,7 @@ const Index = () => {
               questionsUsed={questionsUsed}
               maxQuestions={maxQuestions}
               gamePhase={gamePhase}
+              onGiveUp={giveUp}
             />
           </div>
         )}
@@ -58,6 +69,8 @@ const Index = () => {
               disabled={isLoading || gamePhase === 'waiting'}
               questionsUsed={questionsUsed}
               maxQuestions={maxQuestions}
+              voiceEnabled={voiceEnabled}
+              onVoiceToggle={handleVoiceToggle}
             />
           </div>
         )}

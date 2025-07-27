@@ -13,17 +13,24 @@ export const useAudioManager = () => {
     // Set frequency and duration based on sound type
     switch (type) {
       case 'yes':
-        oscillator.frequency.setValueAtTime(800, audioContext.currentTime); // Higher pitch for positive
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        // Cheerful "ding" sound
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(880, audioContext.currentTime); // A5
+        oscillator.frequency.setValueAtTime(1100, audioContext.currentTime + 0.1); // C#6
+        gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
         break;
       case 'no':
-        oscillator.frequency.setValueAtTime(400, audioContext.currentTime); // Lower pitch for negative
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        // Two-tone "boop" sound
+        oscillator.type = 'triangle';
+        oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+        oscillator.frequency.setValueAtTime(300, audioContext.currentTime + 0.15);
+        gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
         break;
       case 'win':
         // Happy ascending tones
+        oscillator.type = 'sine';
         oscillator.frequency.setValueAtTime(523, audioContext.currentTime); // C5
         oscillator.frequency.setValueAtTime(659, audioContext.currentTime + 0.2); // E5
         oscillator.frequency.setValueAtTime(784, audioContext.currentTime + 0.4); // G5
@@ -32,6 +39,7 @@ export const useAudioManager = () => {
         break;
       case 'lose':
         // Sad descending tone
+        oscillator.type = 'sine';
         oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
         oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.5);
         gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
@@ -40,7 +48,7 @@ export const useAudioManager = () => {
     }
     
     oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + (type === 'win' ? 0.6 : 0.5));
+    oscillator.stop(audioContext.currentTime + (type === 'win' ? 0.6 : type === 'no' ? 0.3 : type === 'yes' ? 0.2 : 0.5));
   }, []);
 
   return { playSound };
