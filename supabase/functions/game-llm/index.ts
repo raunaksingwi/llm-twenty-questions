@@ -153,7 +153,7 @@ const items = [
   'onion', 'car', 'cat', 'watch', 'closet', 'snap', 'grass', 'strawberry', 'carrot', 'chain', 'moon', 'pinecone', 'oven', 'easel', 'can', 'trashcan', 
   'berry', 'shirt', 'dress', 'wall', 'cap', 'tray', 'cheese', 'star', 'stapler', 'blender', 'magnet', 'shovel', 'pajamas', 'fish', 'bird', 'yarn', 'rake', 
   'slipper', 'velcro', 'puddle', 'store', 'river', 'chickpea', 'zebra', 'bear', 'pasta', 'cucumber', 'clay', 'faucet', 'burger', 'celery', 'paper', 'tape', 
-  'globe', 'sticker', 'computer', 'frog', 'relish', 'marker', 'sculpture', 'bookmark', 'hand', 'crate', 'outlet', 'clock', 'worm', 'display', 'drawer', 
+  'globe', 'sticker', 'computer', 'frog', 'relish', 'marker', 'sculpture', 'bookmark', 'hand', 'clock', 'worm', 'drawer', 
   'plate', 'pickle', 'pistachio', 'rock', 'flowerpot', 'bonnet', 'table', 'hammer', 'horse', 'wallet', 'tongue', 'skateboard', 'robe', 'sock', 'egg', 
   'mud', 'sink', 'eraser', 'lentil', 'iron', 'oil', 'plane', 'balloon', 'grater', 'peanut', 'cow', 'raindrop', 'ant', 'disk', 'fabric', 'knee', 'eye', 
   'drill', 'wagon', 'gloves', 'dirt', 'pumpkin', 'snake', 'hat', 'beet', 'seed', 'vase', 'lion', 'salt', 'walnut', 'rug', 'nose', 'eggplant', 'coupon', 
@@ -177,26 +177,35 @@ async function evaluateInput(userInput: string, questionCount: number, secretIte
   const controller = createRequestController();
 
   // Comprehensive but concise system prompt
-  const systemPrompt = `Secret item: "${secretItem}"
-You must respond with EXACTLY one word:
-- "win" ONLY if the user specifically guesses "${secretItem}" or a direct synonym
-- "yes" for true statements that don't guess the exact item
-- "no" for false statements
-- "unsure" if the question is ambiguous or you are not sure about the answer
+  const systemPrompt = `You are the AI referee in a game of 20 Questions. The secret item is "${secretItem}".
 
-Examples if item were a "pencil":
-- "is it a pencil?" → "win"
-- "is it used for writing?" → "yes"
-- "is it found at home?" → "yes"
-- "is it a pen?" → "no"
-- "is it found in the bedroom?" → "unsure"`;
+Your role is to evaluate each question or guess from the player and respond with EXACTLY one word: "win", "yes", "no", or "unsure".
+
+CRITICAL RULES:
+1. For GUESSES (when player names an object):
+   - "win" = player correctly identified "${secretItem}" or its exact synonym
+   - "no" = player guessed wrong
+   - Examples: If secret is "cup", "cup" or "mug" = "win", but "glass" or "container" = "no"
+
+2. For YES/NO QUESTIONS:
+   - "yes" = the statement is definitely true for "${secretItem}"
+   - "no" = the statement is definitely false for "${secretItem}"
+   - "unsure" = the question is ambiguous, subjective, or unclear
+
+3. When to use "unsure":
+   - Questions with multiple conditions ("Is it big AND red?")
+   - Subjective questions ("Is it beautiful?")
+   - Vague questions ("Is it useful?")
+   - Questions about specific details you're uncertain about
+
+Remember: You are helping someone play 20 Questions to guess "${secretItem}". Be precise but fair. When in doubt, prefer "unsure" over potentially misleading answers.`;
 
   const response = await fetch(CLAUDE_API_CONFIG.baseUrl, {
     method: 'POST',
     headers: CLAUDE_API_CONFIG.headers,
     body: JSON.stringify({
       model: CLAUDE_API_CONFIG.model,
-      max_tokens: 100,  // Allow more tokens for accurate responses
+      max_tokens: 100,
       temperature: 0,   // Keep deterministic for consistency
       messages: [{
         role: 'user',
