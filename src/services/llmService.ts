@@ -26,7 +26,6 @@ export class LLMGameService {
     
     try {
       const response = await this.callBackend('select_secret_item', {});
-      console.log('✅ selectSecretItem response:', response);
       this.secretItem = response.content;
       return this.secretItem;
     } catch (error) {
@@ -79,7 +78,6 @@ export class LLMGameService {
       }
 
       const result = await response.json();
-      console.log('✅ Backend response:', result);
       return result;
     } catch (error) {
       console.error('❌ Fetch error:', error);
