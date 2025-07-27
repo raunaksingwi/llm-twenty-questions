@@ -26,8 +26,8 @@ dist-ssr
 # Supabase
 supabase/.branches
 supabase/.temp
-supabase/.config.toml
-supabase/.config.toml.backup
+supabase/config.toml
+supabase/config.toml.backup
 
 # VSCode
 .vscode
