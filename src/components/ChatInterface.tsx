@@ -48,6 +48,7 @@ export const ChatInterface = ({
     isSupported: speechSupported, 
     startListening, 
     stopListening, 
+    stopListeningDelayed,
     resetTranscript 
   } = useSpeechRecognition();
   
@@ -68,6 +69,7 @@ export const ChatInterface = ({
 
   // Only update input field with transcript when not using hold-to-talk
   const [isHoldToTalk, setIsHoldToTalk] = useState(false);
+  const [isCapturingFinal, setIsCapturingFinal] = useState(false);
 
   // Clear message field whenever we're in hold-to-talk mode
   useEffect(() => {
@@ -143,22 +145,25 @@ export const ChatInterface = ({
       // Capture the current transcript before stopping
       const currentTranscript = transcript.trim();
       
-      stopListening();
+      // Use delayed stop to capture final words
+      stopListeningDelayed(800); // 800ms delay to capture final words
       setIsHoldToTalk(false);
+      setIsCapturingFinal(true);
       
-      // Small delay to capture any final speech recognition results
+      // Wait a bit longer to capture any final speech recognition results
       setTimeout(() => {
         // Use the latest transcript or the one we captured
         const finalTranscript = transcript.trim() || currentTranscript;
         
         setMessage(''); // Keep input field clear
+        setIsCapturingFinal(false);
         
         if (finalTranscript && !disabled) {
           stopSpeaking();
           onSubmitMessage(finalTranscript);
         }
         resetTranscript();
-      }, 300); // Reduced delay for better responsiveness
+      }, 1000); // Increased delay to match the delayed stop
     } else {
       // Ensure state is clean even if we somehow get here without listening
       setIsHoldToTalk(false);
@@ -171,20 +176,23 @@ export const ChatInterface = ({
     if (isListening || isHoldToTalk) {
       const currentTranscript = transcript.trim();
       
-      stopListening();
+      // Use delayed stop to capture final words
+      stopListeningDelayed(800);
       setIsHoldToTalk(false);
+      setIsCapturingFinal(true);
       
       setTimeout(() => {
         const finalTranscript = transcript.trim() || currentTranscript;
         
         setMessage('');
+        setIsCapturingFinal(false);
         
         if (finalTranscript && !disabled) {
           stopSpeaking();
           onSubmitMessage(finalTranscript);
         }
         resetTranscript();
-      }, 300);
+      }, 1000);
     }
   };
 
@@ -345,8 +353,10 @@ export const ChatInterface = ({
                 disabled={disabled}
                 className={`${
                   isListening 
-                    ? 'border-red-300 bg-red-50 dark:bg-red-950/20 dark:border-red-800' 
-                    : 'border-blue-200 dark:border-slate-600 bg-white dark:bg-slate-800'
+                    ? 'border-red-300 bg-red-50 dark:bg-red-950/20 dark:border-red-800'
+                    : isCapturingFinal
+                      ? 'border-orange-300 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-800'
+                      : 'border-blue-200 dark:border-slate-600 bg-white dark:bg-slate-800'
                 } ${disabled ? 'opacity-50' : ''} rounded-xl shadow-md focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500`}
               />
             </div>
@@ -364,13 +374,17 @@ export const ChatInterface = ({
               className={`w-12 h-12 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:transform-none flex items-center justify-center ${
                 isListening 
                   ? 'bg-gradient-to-r from-red-500 to-red-600'
-                  : showSendButton
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-600'
-                    : 'bg-gradient-to-r from-green-500 to-teal-600'
+                  : isCapturingFinal
+                    ? 'bg-gradient-to-r from-orange-500 to-orange-600'
+                    : showSendButton
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-600'
+                      : 'bg-gradient-to-r from-green-500 to-teal-600'
               } text-white`}
             >
               {isListening ? (
                 <MicOff className="h-5 w-5" />
+              ) : isCapturingFinal ? (
+                <Mic className="h-5 w-5 animate-pulse" />
               ) : showSendButton ? (
                 <Send className="h-5 w-5" />
               ) : (
@@ -386,6 +400,7 @@ export const ChatInterface = ({
                 🎤 Keep holding to talk...
               </p>
             )}
+
             {isSpeaking && (
               <p className="text-xs text-blue-600 dark:text-blue-400 animate-pulse font-medium">
                 🔊 Speaking...

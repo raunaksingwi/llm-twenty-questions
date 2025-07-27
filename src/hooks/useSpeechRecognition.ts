@@ -68,6 +68,7 @@ export const useSpeechRecognition = () => {
         recognitionInstance.continuous = true;
         recognitionInstance.interimResults = true;
         recognitionInstance.lang = 'en-US'; // Set language explicitly
+        recognitionInstance.maxAlternatives = 1; // Focus on best result
         
         recognitionInstance.onstart = () => {
           // Speech recognition started
@@ -85,7 +86,10 @@ export const useSpeechRecognition = () => {
             if (result.isFinal) {
               finalTranscript += transcript + ' ';
             } else {
-              interimTranscript += transcript;
+              // Only use interim results with high confidence
+              if (result[0].confidence > 0.7) {
+                interimTranscript += transcript;
+              }
             }
           }
           
@@ -174,6 +178,24 @@ export const useSpeechRecognition = () => {
     }
   }, []);
 
+  const stopListeningDelayed = useCallback((delayMs: number = 500) => {
+    if (recognitionRef.current && isListeningRef.current) {
+      // Mark that we want to stop, but don't stop immediately
+      isListeningRef.current = false;
+      
+      // Stop after a delay to capture final words
+      setTimeout(() => {
+        try {
+          setIsListening(false);
+          recognitionRef.current?.stop();
+        } catch (error) {
+          console.error('Failed to stop speech recognition after delay:', error);
+          setIsListening(false);
+        }
+      }, delayMs);
+    }
+  }, []);
+
   const resetTranscript = useCallback(() => {
     setTranscript('');
   }, []);
@@ -184,6 +206,7 @@ export const useSpeechRecognition = () => {
     isSupported: typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window),
     startListening,
     stopListening,
+    stopListeningDelayed,
     resetTranscript,
   };
 };
