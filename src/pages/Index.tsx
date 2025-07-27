@@ -51,7 +51,7 @@ const Index = () => {
               isLoading={isLoading}
             />
           </div>
-        ) : (gamePhase === 'won' || gamePhase === 'lost') ? (
+        ) : (gamePhase === 'won' || gamePhase === 'lost' || gamePhase === 'gave_up') ? (
           <div className="flex-1 flex items-center justify-center p-4">
             <GameEndScreen
               gamePhase={gamePhase}

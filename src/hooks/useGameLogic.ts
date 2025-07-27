@@ -3,7 +3,7 @@ import { GameEntry } from '@/types/game';
 import { useAudioManager } from '@/components/AudioManager';
 import { LLMGameService } from '@/services/llmService';
 
-type GamePhase = 'intro' | 'waiting' | 'playing' | 'won' | 'lost';
+type GamePhase = 'intro' | 'waiting' | 'playing' | 'won' | 'lost' | 'gave_up';
 
 export const useGameLogic = () => {
   const [gamePhase, setGamePhase] = useState<GamePhase>('intro');
@@ -130,7 +130,7 @@ export const useGameLogic = () => {
 
   const giveUp = useCallback(() => {
     if (gamePhase === 'playing') {
-      setGamePhase('lost');
+      setGamePhase('gave_up');
       playSound('lose');
       
       // Add a system message showing the answer

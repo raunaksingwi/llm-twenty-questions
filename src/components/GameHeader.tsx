@@ -14,7 +14,7 @@ import { useState } from 'react';
 interface GameHeaderProps {
   questionsUsed: number;
   maxQuestions: number;
-  gamePhase: 'waiting' | 'playing' | 'won' | 'lost';
+  gamePhase: 'waiting' | 'playing' | 'won' | 'lost' | 'gave_up';
   onGiveUp?: () => void;
 }
 
@@ -34,6 +34,7 @@ export const GameHeader = ({
   const getStatusEmoji = () => {
     if (gamePhase === 'won') return '🎉';
     if (gamePhase === 'lost') return '😔';
+    if (gamePhase === 'gave_up') return '😔';
     if (gamePhase === 'waiting') return '⏳';
     return '🤔';
   };
@@ -41,6 +42,7 @@ export const GameHeader = ({
   const getStatusText = () => {
     if (gamePhase === 'won') return 'You Won!';
     if (gamePhase === 'lost') return 'Game Over';
+    if (gamePhase === 'gave_up') return 'Game Over';
     if (gamePhase === 'waiting') return 'Getting Ready...';
     return 'Your Turn';
   };

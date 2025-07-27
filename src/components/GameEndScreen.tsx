@@ -1,7 +1,7 @@
 import { RotateCcw } from "lucide-react";
 
 interface GameEndScreenProps {
-  gamePhase: 'won' | 'lost';
+  gamePhase: 'won' | 'lost' | 'gave_up';
   secretItem?: string;
   questionsUsed: number;
   maxQuestions: number;
@@ -16,6 +16,7 @@ export const GameEndScreen = ({
   onNewGame 
 }: GameEndScreenProps) => {
   const isWin = gamePhase === 'won';
+  const isGiveUp = gamePhase === 'gave_up';
 
   return (
     <div className="w-full max-w-sm mx-auto text-center space-y-6">
@@ -24,10 +25,12 @@ export const GameEndScreen = ({
         <div className={`w-24 h-24 mx-auto rounded-full flex items-center justify-center ${
           isWin 
             ? 'bg-gradient-to-br from-green-400 to-emerald-500' 
+            : isGiveUp
+            ? 'bg-gradient-to-br from-red-400 to-pink-500'
             : 'bg-gradient-to-br from-orange-400 to-red-500'
         } shadow-lg`}>
           <span className="text-4xl">
-            {isWin ? '🏆' : '🤔'}
+            {isWin ? '🏆' : isGiveUp ? '😔' : '🤔'}
           </span>
         </div>
         
@@ -35,13 +38,17 @@ export const GameEndScreen = ({
           <h2 className={`text-2xl font-bold mb-2 ${
             isWin 
               ? 'text-green-700 dark:text-green-400' 
+              : isGiveUp
+              ? 'text-red-700 dark:text-red-400'
               : 'text-orange-700 dark:text-orange-400'
           }`}>
-            {isWin ? 'Awesome!' : 'Good Try!'}
+            {isWin ? 'Awesome!' : isGiveUp ? 'Better Luck Next Time!' : 'Good Try!'}
           </h2>
           <p className="text-slate-600 dark:text-slate-400 text-sm">
             {isWin 
               ? `You got it in ${questionsUsed} question${questionsUsed !== 1 ? 's' : ''}!` 
+              : isGiveUp
+              ? `You used ${questionsUsed} question${questionsUsed !== 1 ? 's' : ''} before giving up.`
               : `You used all ${maxQuestions} questions.`
             }
           </p>
@@ -53,6 +60,8 @@ export const GameEndScreen = ({
         <div className={`rounded-2xl p-6 border-2 ${
           isWin 
             ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800' 
+            : isGiveUp
+            ? 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800'
             : 'bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800'
         }`}>
           <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wide">
