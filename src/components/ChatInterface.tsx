@@ -105,26 +105,32 @@ export const ChatInterface = ({
     }
   };
 
-  const handleMicStart = (e: React.MouseEvent | React.TouchEvent) => {
+  const handleMicStart = async (e: React.MouseEvent | React.TouchEvent) => {
     // Prevent any default behavior (like focusing nearby elements)
     e.preventDefault();
     e.stopPropagation();
     
-    if (!disabled && !isListening && !isHoldToTalk) {
-      stopSpeaking(); // Stop any current speech before listening
-      resetTranscript();
-      setMessage(''); // Clear the input field
-      setIsHoldToTalk(true);
-      
-      // Blur any focused input to hide mobile keyboard and prevent interference
-      if (document.activeElement instanceof HTMLElement) {
-        document.activeElement.blur();
+    if (!disabled && !isListening) {
+      try {
+        stopSpeaking(); // Stop any current speech before listening
+        resetTranscript();
+        setMessage(''); // Clear the input field
+        setIsHoldToTalk(true);
+        
+        // Blur any focused input to hide mobile keyboard and prevent interference
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+        
+        // Force focus away from button to prevent OS interference
+        (e.target as HTMLElement).blur();
+        
+        await startListening();
+      } catch (error) {
+        console.error('Failed to start listening:', error);
+        setIsHoldToTalk(false);
+        // You might want to show a user-friendly error message here
       }
-      
-      // Force focus away from button to prevent OS interference
-      (e.target as HTMLElement).blur();
-      
-      startListening();
     }
   };
 
@@ -138,13 +144,13 @@ export const ChatInterface = ({
       const currentTranscript = transcript.trim();
       
       stopListening();
+      setIsHoldToTalk(false);
       
       // Small delay to capture any final speech recognition results
       setTimeout(() => {
         // Use the latest transcript or the one we captured
         const finalTranscript = transcript.trim() || currentTranscript;
         
-        setIsHoldToTalk(false);
         setMessage(''); // Keep input field clear
         
         if (finalTranscript && !disabled) {
@@ -152,11 +158,33 @@ export const ChatInterface = ({
           onSubmitMessage(finalTranscript);
         }
         resetTranscript();
-      }, 500);
+      }, 300); // Reduced delay for better responsiveness
     } else {
       // Ensure state is clean even if we somehow get here without listening
       setIsHoldToTalk(false);
       setMessage('');
+    }
+  };
+
+  const handleMicBlur = () => {
+    // Handle focus loss - stop listening if we were in hold-to-talk mode
+    if (isListening || isHoldToTalk) {
+      const currentTranscript = transcript.trim();
+      
+      stopListening();
+      setIsHoldToTalk(false);
+      
+      setTimeout(() => {
+        const finalTranscript = transcript.trim() || currentTranscript;
+        
+        setMessage('');
+        
+        if (finalTranscript && !disabled) {
+          stopSpeaking();
+          onSubmitMessage(finalTranscript);
+        }
+        resetTranscript();
+      }, 300);
     }
   };
 
@@ -169,6 +197,13 @@ export const ChatInterface = ({
     setMessage(newMessage);
     setShowSendButton(newMessage.trim().length > 0);
   };
+
+  // Reset button state when not in hold-to-talk mode
+  useEffect(() => {
+    if (!isHoldToTalk && !isListening) {
+      setShowSendButton(false);
+    }
+  }, [isHoldToTalk, isListening]);
 
   const handleGiveUp = () => {
     setShowGiveUpDialog(false);
@@ -325,6 +360,7 @@ export const ChatInterface = ({
               onTouchEnd={!showSendButton ? handleMicEnd : undefined}
               onTouchCancel={!showSendButton ? handleMicEnd : undefined}
               onContextMenu={(e) => !showSendButton && e.preventDefault()} // Prevent long-press menu on mobile
+              onBlur={!showSendButton ? handleMicBlur : undefined} // Handle focus loss
               className={`w-12 h-12 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:transform-none flex items-center justify-center ${
                 isListening 
                   ? 'bg-gradient-to-r from-red-500 to-red-600'

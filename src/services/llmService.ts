@@ -23,8 +23,6 @@ export class LLMGameService {
   }
 
   async evaluateInput(userInput: string, questionCount: number): Promise<LLMGameResponse> {
-    console.log('🎯 evaluateInput called with:', { userInput, questionCount, secretItem: this.secretItem });
-    
     try {
       const response = await this.callBackend('evaluate_input', {
         userInput,
