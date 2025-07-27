@@ -39,6 +39,11 @@ interface SpeechRecognition extends EventTarget {
   onerror: ((event: Event) => void) | null;
 }
 
+interface SpeechRecognitionErrorEvent extends Event {
+  readonly error: string;
+  readonly message: string;
+}
+
 declare global {
   interface Window {
     SpeechRecognition: new () => SpeechRecognition;
@@ -104,7 +109,7 @@ export const useSpeechRecognition = () => {
           }
         };
 
-        recognitionInstance.onerror = (event: any) => {
+        recognitionInstance.onerror = (event: SpeechRecognitionErrorEvent) => {
           console.error('Speech recognition error:', event.error);
           if (event.error === 'no-speech' || event.error === 'audio-capture') {
             // These errors are common and don't necessarily mean we should stop

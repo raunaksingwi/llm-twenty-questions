@@ -33,6 +33,20 @@ interface CostMetrics {
   cost: number;
 }
 
+interface ClaudeApiResponse {
+  content: Array<{ text: string }>;
+  usage?: {
+    input_tokens: number;
+    output_tokens: number;
+  };
+}
+
+interface EvaluateInputResponse {
+  type: 'answer' | 'clarification' | 'guess_evaluation';
+  content: string;
+  isCorrect?: boolean;
+}
+
 const COST_PER_1K_TOKENS = {
   input: 0.00025,   // $0.25/1K tokens for Haiku input
   output: 0.00125,  // $1.25/1K tokens for Haiku output
@@ -52,7 +66,7 @@ const logPerformance = (action: string, startTime: number, metrics?: CostMetrics
   return duration;
 };
 
-const calculateCost = (data: any): CostMetrics => {
+const calculateCost = (data: ClaudeApiResponse): CostMetrics => {
   const promptTokens = data.usage?.input_tokens || 0;
   const completionTokens = data.usage?.output_tokens || 0;
   const totalTokens = promptTokens + completionTokens;
@@ -185,7 +199,7 @@ async function selectSecretItem(): Promise<{ content: string }> {
   return { content: secretItem };
 }
 
-async function evaluateInput(userInput: string, questionCount: number, secretItem: string): Promise<any> {
+async function evaluateInput(userInput: string, questionCount: number, secretItem: string): Promise<EvaluateInputResponse> {
   const startTime = performance.now();
   logPerformance('evaluateInput:start', startTime);
   const controller = createRequestController();
@@ -237,12 +251,12 @@ Remember: You are helping someone play 20 Questions to guess "${secretItem}". Be
     throw new Error(error);
   }
 
-  const data = await response.json();
+  const data: ClaudeApiResponse = await response.json();
   const metrics = calculateCost(data);
   logPerformance('evaluateInput:parseResponse', startTime, metrics);
   
   const content = data.content[0].text.trim();
-  let result;
+  let result: EvaluateInputResponse;
 
   // Process the one-word response
   const answer = content.trim().toLowerCase();

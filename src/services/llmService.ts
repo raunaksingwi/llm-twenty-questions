@@ -5,6 +5,19 @@ interface LLMGameResponse {
   selectedItem?: string;
 }
 
+interface BackendRequestData {
+  userInput?: string;
+  questionCount?: number;
+  secretItem?: string;
+}
+
+interface BackendResponse {
+  content: string;
+  type: 'answer' | 'clarification' | 'item_selection' | 'guess_evaluation';
+  isCorrect?: boolean;
+  selectedItem?: string;
+}
+
 export class LLMGameService {
   private secretItem: string = '';
 
@@ -37,7 +50,7 @@ export class LLMGameService {
     }
   }
 
-  private async callBackend(action: string, data: any): Promise<any> {
+  private async callBackend(action: string, data: BackendRequestData): Promise<BackendResponse> {
     const url = 'https://jzvrquzwwhrpxkvkukgd.supabase.co/functions/v1/game-llm';
     console.log('🚀 callBackend called with:', { action, data, url });
     

@@ -3,7 +3,7 @@ import { useCallback } from 'react';
 export const useAudioManager = () => {
   const playSound = useCallback((type: 'yes' | 'no' | 'win' | 'lose') => {
     // Create simple audio tones using Web Audio API
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const audioContext = new (window.AudioContext || (window as typeof window & { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
     
