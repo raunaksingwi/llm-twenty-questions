@@ -1,73 +1,60 @@
-# Welcome to your Lovable project
+# Twenty Questions Game
 
-## Project info
+## Getting Started
 
-**URL**: https://lovable.dev/projects/f59f651e-3c4c-4df3-be7b-f1befcdaaf3e
+To get a local copy up and running, follow these simple steps.
 
-## How can I edit this code?
+### Prerequisites
 
-There are several ways of editing your application.
+- npm
+  ```sh
+  npm install npm@latest -g
+  ```
 
-**Use Lovable**
+### Installation
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/f59f651e-3c4c-4df3-be7b-f1befcdaaf3e) and start prompting.
+1. Clone the repo
+   ```sh
+   git clone https://github.com/your_username_/your_project_name.git
+   ```
+2. Install NPM packages
+   ```sh
+   npm install
+   ```
+3. Start the development server
+   ```sh
+   npm run dev
+   ```
 
-Changes made via Lovable will be committed automatically to this repo.
 
-**Use your preferred IDE**
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
-Follow these steps:
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Project Index
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+This document provides an index of the important directories in this project. Each directory has a `README.md` file that explains the code within it and how it is organized.
 
-# Step 3: Install the necessary dependencies.
-npm i
+## Source Code (`src/`)
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+The `src/` directory contains the source code for the frontend application.
 
-**Edit a file directly in GitHub**
+- **[`src/components/`](./src/components/README.md)**: This directory houses the reusable React components that form the user interface of the application. It is further organized into general-purpose UI components and application-level components.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- **[`src/hooks/`](./src/hooks/README.md)**: This directory contains custom React hooks that encapsulate and manage stateful logic, side effects, and other reusable behaviors.
 
-**Use GitHub Codespaces**
+- **[`src/integrations/supabase/`](./src/integrations/supabase/README.md)**: This directory handles the integration with Supabase, which is used as the backend for the application. It includes the Supabase client and TypeScript types for the database.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+- **[`src/lib/`](./src/lib/README.md)**: This directory contains utility functions and helper modules that are used across the application.
 
-## What technologies are used for this project?
+- **[`src/pages/`](./src/pages/README.md)**: This directory contains the top-level components that represent the different pages of the application.
 
-This project is built with:
+- **[`src/services/`](./src/services/README.md)**: This directory contains modules that are responsible for interacting with external services and APIs, such as the large language model (LLM).
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- **[`src/types/`](./src/types/README.md)**: This directory contains TypeScript type definitions and interfaces that are used throughout the application.
 
-## How can I deploy this project?
+## Supabase (`supabase/`)
 
-Simply open [Lovable](https://lovable.dev/projects/f59f651e-3c4c-4df3-be7b-f1befcdaaf3e) and click on Share -> Publish.
+The `supabase/` directory contains the backend code for the application, which is built on Supabase.
 
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+- **[`supabase/functions/game-llm/`](./supabase/functions/game-llm/README.md)**: This directory contains the serverless function that handles the game's core logic by interacting with the large language model (LLM).
